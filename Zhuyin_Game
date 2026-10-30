@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>定緁的勇者迷宮速通冒險：決戰巨龍</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 5px;
+            background-color: #1a1a2e;
+            color: #e94560;
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            overflow: hidden; /* 徹底鎖死捲軸，確保一頁顯示全貌 */
+        }
+
+        h1 {
+            margin: 2px 0;
+            font-size: 22px; /* 標題縮小，不佔空間 */
+            color: #0ff;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+            text-align: center;
+        }
+
+        .top-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .info-panel {
+            font-size: 15px;
+            color: #fff;
+            font-weight: bold;
+            background: #16213e;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 2px solid #0f3460;
+        }
+
+        #music-btn {
+            background-color: #e94560;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 3px 0 #a8203b;
+        }
+        #music-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 0 0 #a8203b;
+        }
+
+        #game-container {
+            position: relative;
+            width: 900px;
+            height: 520px; /* 適度調整，確保無捲軸 */
+            background-color: #16213e;
+            border: 4px solid #0f3460;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            display: block;
+            background: #0f3460;
+        }
+
+        #modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 520px;
+            background: rgba(22, 33, 62, 0.98);
+            border: 4px solid #e94560;
+            border-radius: 16px;
+            padding: 15px 20px;
+            box-shadow: 0 20px 45px rgba(0,0,0,0.9);
+            text-align: center;
+            z-index: 10;
+            box-sizing: border-box;
+        }
+
+        #modal h2 {
+            margin: 0 0 6px 0;
+            color: #ff2e63;
+            font-size: 22px;
+        }
+
+        #target-info {
+            font-size: 17px;
+            color: #fff;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 6px;
+            border-radius: 6px;
+        }
+
+        #input-display {
+            font-size: 30px;
+            letter-spacing: 5px;
+            color: #0ff;
+            background: #0f3460;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            min-height: 40px;
+            border: 2px dashed #0ff;
+        }
+
+        .keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .key-btn {
+            background-color: #e94560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 3px 0 #a8203b;
+        }
+
+        .key-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 0 0 #a8203b;
+        }
+
+        .key-btn.tone {
+            background-color: #f39c12;
+            box-shadow: 0 3px 0 #d35400;
+        }
+
+        .key-btn.tone:active {
+            box-shadow: 0 0 0 #d35400;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        #clear-btn {
+            background-color: #7f8c8d;
+            color: white;
+        }
+
+        #submit-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        #message {
+            margin-top: 6px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .controls-tip {
+            margin-top: 5px;
+            font-size: 13px;
+            color: #a0a0a0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>✨ 定緁的勇者迷宮速通冒險：決戰巨龍 ✨</h1>
+    
+    <div class="top-bar">
+        <div class="info-panel">關卡：第 <span id="current-stage">1</span> / 7 關</div>
+        <div class="info-panel">⏱️ 時間：<span id="timer">0</span> 秒</div>
+        <button id="music-btn" onclick="toggleBGM()">🎵 播放冒險 BGM</button>
+    </div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="900" height="520"></canvas>
+        
+        <div id="modal">
+            <h2 id="modal-title">🔓 勇者解鎖寶箱</h2>
+            <div id="target-info">載入中...</div>
+            <div id="input-display"></div>
+            
+            <div class="keyboard" id="keyboard"></div>
+
+            <div class="action-row">
+                <button class="action-btn" id="clear-btn" onclick="clearInput()">清除重填</button>
+                <button class="action-btn" id="submit-btn" onclick="checkAnswer()">確認咒語 🔑</button>
+            </div>
+            <div id="message"></div>
+        </div>
+    </div>
+
+    <div class="controls-tip">
+        🎮 操作方式：方向鍵或 <b>A / D / W / S</b> 操控勇者。收集地上的注音，走到寶箱前拼出咒語即可通關！
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const stages = [
+            {
+                type: "chest", word: "寶箱", english: "Treasure Chest", icon: "🎁", pinyin: "ㄅㄠˇㄒㄧㄤ", color: "#f1c40f",
+                poolKeys: ["ㄅ", "ㄠ", "ˇ", "ㄒ", "ㄧ", "ㄤ", "ㄉ", "ㄇ", "ㄆ"],
+                startX: 1, startY: 1, targetX: 16, targetY: 9,
+                walls: [
+                    {x:3, y:0, w:1, h:7}, {x:6, y:3, w:1, h:7}, {x:9, y:1, w:1, h:6},
+                    {x:12, y:2, w:1, h:8}, {x:4, y:9, w:5, h:1}, {x:13, y:2, w:3, h:1}
+                ],
+                items: [
+                    {symbol: "ㄅ", x: 4, y: 2}, {symbol: "ㄠ", x: 2, y: 6},
+                    {symbol: "ˇ", x: 7, y: 2}, {symbol: "ㄒ", x: 10, y: 4},
+                    {symbol: "ㄧ", x: 7, y: 8}, {symbol: "ㄤ", x: 14, y: 7}
+                ]
+            },
+            {
+                type: "chest", word: "怪物", english: "Monster", icon: "👾", pinyin: "ㄍㄨㄞˋㄨˋ", color: "#e74c3c",
+                poolKeys: ["ㄍ", "ㄨ", "ㄞ", "ˋ", "ㄨ", "ㄅ", "ㄉ", "ㄎ", "ㄏ"],
+                startX: 1, startY: 9, targetX: 16, targetY: 1,
+                walls: [
+                    {x:2, y:3, w:7, h:1}, {x:5, y:4, w:1, h:5}, {x:10, y:1, w:1, h:7},
+                    {x:13, y:3, w:3, h:1}, {x:8, y:8, w:6, h:1}, {x:12, y:6, w:1, h:3}
+                ],
+                items: [
+                    {symbol: "ㄍ", x: 3, y: 1}, {symbol: "ㄨ", x: 3, y: 7},
+                    {symbol: "ㄞ", x: 8, y: 2}, {symbol: "ˇ", x: 8, y: 6},
+                    {symbol: "ㄨ", x: 11, y: 2}, {symbol: "ˋ", x: 15, y: 7}
+                ]
+            },
+            {
+                type: "chest", word: "武器", english: "Weapon", icon: "🗡️", pinyin: "ㄨˇㄑㄧˋ", color: "#3498db",
+                poolKeys: ["ㄨ", "ˇ", "ㄑ", "ㄧ", "ˋ", "ㄅ", "ㄉ", "ㄐ", "ㄒ"],
+                startX: 16, startY: 1, targetX: 1, targetY: 9,
+                walls: [
+                    {x:4, y:1, w:1, h:6}, {x:7, y:3, w:5, h:1}, {x:11, y:4, w:1, h:5},
+                    {x:3, y:8, w:5, h:1}, {x:13, y:2, w:1, h:6}, {x:15, y:7, w:2, h:1}
+                ],
+                items: [
+                    {symbol: "ㄨ", x: 13, y: 1}, {symbol: "ˇ", x: 9, y: 2},
+                    {symbol: "ㄑ", x: 5, y: 5}, {symbol: "ㄧ", x: 2, y: 4},
+                    {symbol: "ˋ", x: 9, y: 9}
+                ]
+            },
+            {
+                type: "chest", word: "魔法", english: "Magic", icon: "🔮", pinyin: "ㄇㄛˊㄈㄚˇ", color: "#9b59b6",
+                poolKeys: ["ㄇ", "ㄛ", "ˊ", "ㄈ", "ㄚ", "ˇ", "ㄉ", "ㄋ", "ㄌ"],
+                startX: 1, startY: 5, targetX: 16, targetY: 5,
+                walls: [
+                    {x:4, y:2, w:1, h:7}, {x:6, y:1, w:1, h:6}, {x:9, y:3, w:1, h:6},
+                    {x:11, y:2, w:1, h:7}, {x:14, y:1, w:1, h:6}, {x:6, y:3, w:3, h:1}
+                ],
+                items: [
+                    {symbol: "ㄇ", x: 2, y: 2}, {symbol: "ㄛ", x: 4, y: 5},
+                    {symbol: "ˊ", x: 7, y: 7}, {symbol: "ㄈ", x: 10, y: 2},
+                    {symbol: "ㄚ", x: 12, y: 5}, {symbol: "ˇ", x: 15, y: 3}
+                ]
+            },
+            {
+                type: "chest", word: "鑰匙", english: "Key", icon: "🗝️", pinyin: "ㄧㄠˋㄕ˙", color: "#1abc9c",
+                poolKeys: ["ㄧ", "ㄠ", "ˋ", "ㄕ", "˙", "ㄅ", "ㄉ", "ㄓ", "ㄔ"],
+                startX: 9, startY: 9, targetX: 9, targetY: 1,
+                walls: [
+                    {x:2, y:3, w:13, h:1}, {x:2, y:7, w:13, h:1}, {x:4, y:4, w:1, h:3}, {x:12, y:4, w:1, h:3}
+                ],
+                items: [
+                    {symbol: "ㄧ", x: 5, y: 1}, {symbol: "ㄠ", x: 1, y: 5},
+                    {symbol: "ˋ", x: 15, y: 5}, {symbol: "ㄕ", x: 7, y: 9},
+                    {symbol: "˙", x: 10, y: 9}
+                ]
+            },
+            {
+                type: "chest", word: "勝利", english: "Victory", icon: "🏆", pinyin: "ㄕㄥˋㄌㄧˋ", color: "#e67e22",
+                poolKeys: ["ㄕ", "ㄥ", "ˋ", "ㄌ", "ㄧ", "ㄅ", "ㄉ", "ㄖ", "ㄗ"],
+                startX: 1, startY: 1, targetX: 16, targetY: 9,
+                walls: [
+                    {x:2, y:2, w:3, h:2}, {x:7, y:1, w:1, h:8}, {x:10, y:2, w:6, h:1},
+                    {x:4, y:7, w:8, h:1}, {x:12, y:4, w:1, h:3}
+                ],
+                items: [
+                    {symbol: "ㄕ", x: 5, y: 3}, {symbol: "ㄥ", x: 1, y: 7},
+                    {symbol: "ˋ", x: 8, y: 4}, {symbol: "ㄌ", x: 13, y: 1},
+                    {symbol: "ㄧ", x: 10, y: 9}, {symbol: "ˋ", x: 15, y: 7}
+                ]
+            },
+            {
+                type: "boss",  word: "巨龍", english: "Dragon Boss", icon: "🐉", pinyin: "ㄐㄩˋㄌㄨㄥˊ", color: "#ff0055",
+                poolKeys: ["ㄐ", "ㄩ", "ˋ", "ㄌ", "ㄨ", "ㄥ", "ˊ", "ㄅ", "ㄉ"],
+                startX: 1, startY: 5, targetX: 16, targetY: 5,
+                walls: [
+                    {x:4, y:1, w:1, h:3}, {x:4, y:6, w:1, h:3},
+                    {x:9, y:2, w:1, h:6},
+                    {x:13, y:1, w:1, h:3}, {x:13, y:6, w:1, h:3}
+                ],
+                items: [
+                    {symbol: "ㄐ", x: 2, y: 2}, {symbol: "ㄩ", x: 2, y: 8},
+                    {symbol: "ˋ", x: 6, y: 4}, {symbol: "ㄌ", x: 7, y: 7},
+                    {symbol: "ㄨ", x: 10, y: 1}, {symbol: "ㄥ", x: 10, y: 9},
+                    {symbol: "ˊ", x: 15, y: 3}
+                ]
+            }
+        ];
+
+        let currentStageIndex = 0;
+        let activeTarget = null;
+        const tileSize = 50;
+
+        let player = {
+            x: 50,
+            y: 50,
+            width: 32,
+            height: 32,
+            speed: 4.5,
+            color: "#0ff"
+        };
+
+        let keys = {};
+        let userInput = "";
+        let totalSeconds = 0;
+        let timerInterval = setInterval(() => {
+            totalSeconds++;
+            document.getElementById("timer").innerText = totalSeconds;
+        }, 1000);
+
+        function resetStage() {
+            let stage = stages[currentStageIndex];
+            player.x = stage.startX * tileSize + 8;
+            player.y = stage.startY * tileSize + 8;
+            stage.items.forEach(item => item.collected = false);
+        }
+
+        let audioCtx = null;
+        let bgmPlaying = false;
+        let bgmTimer = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playClickSound() {
+            try {
+                initAudio();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } catch (e) {}
+        }
+
+        function playCollectSound() {
+            try {
+                initAudio();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } catch (e) {}
+        }
+
+        function playSuccessSound() {
+            try {
+                initAudio();
+                let notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, index) => {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    let startTime = audioCtx.currentTime + index * 0.08;
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, startTime);
+                    gain.gain.setValueAtTime(0.15, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.18);
+                });
+            } catch (e) {}
+        }
+
+        function playErrorSound() {
+            try {
+                initAudio();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(120, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            } catch (e) {}
+        }
+
+        const bgmNotes = [
+            261.63, 329.63, 392.00, 523.25, 392.00, 329.63,
+            220.00, 261.63, 329.63, 349.23, 329.63, 293.66,
+            246.94, 293.66, 369.99, 440.00, 369.99, 293.66,
+            196.00, 246.94, 293.66, 329.63, 293.66, 246.94
+        ];
+        let noteIndex = 0;
+
+        function playBGMStep() {
+            if (!bgmPlaying) return;
+            try {
+                initAudio();
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(bgmNotes[noteIndex], audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.005, audioCtx.currentTime + 0.22);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+                noteIndex = (noteIndex + 1) % bgmNotes.length;
+            } catch (e) {}
+        }
+
+        function toggleBGM() {
+            initAudio();
+            bgmPlaying = !bgmPlaying;
+            const btn = document.getElementById("music-btn");
+            if (bgmPlaying) {
+                btn.innerText = "🔇 關閉 BGM";
+                btn.style.backgroundColor = "#2ecc71";
+                if (bgmTimer) clearInterval(bgmTimer);
+                bgmTimer = setInterval(playBGMStep, 250);
+            } else {
+                btn.innerText = "🎵 播放 BGM";
+                btn.style.backgroundColor = "#e94560";
+                if (bgmTimer) clearInterval(bgmTimer);
+            }
+        }
+
+        window.addEventListener("keydown", (e) => {
+            keys[e.key] = true;
+            if (e.key === "Enter" && activeTarget && document.getElementById("modal").style.display === "block") {
+                checkAnswer();
+            }
+        });
+        window.addEventListener("keyup", (e) => { keys[e.key] = false; });
+
+        function checkCollision(nx, ny) {
+            let stage = stages[currentStageIndex];
+            let pBox = { x: nx, y: ny, width: player.width, height: player.height };
+
+            if (pBox.x < 0 || pBox.x + pBox.width > canvas.width || pBox.y < 0 || pBox.y + pBox.height > canvas.height) {
+                return true;
+            }
+
+            for (let wall of stage.walls) {
+                let wBox = { x: wall.x * tileSize, y: wall.y * tileSize, width: wall.w * tileSize, height: wall.h * tileSize };
+                if (pBox.x < wBox.x + wBox.width && pBox.x + pBox.width > wBox.x &&
+                    pBox.y < wBox.y + wBox.height && pBox.y + pBox.height > wBox.y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function update() {
+            if (document.getElementById("modal").style.display === "block") return;
+
+            let dx = 0, dy = 0;
+            if (keys["ArrowLeft"] || keys["a"] || keys["A"]) dx -= player.speed;
+            if (keys["ArrowRight"] || keys["d"] || keys["D"]) dx += player.speed;
+            if (keys["ArrowUp"] || keys["w"] || keys["W"]) dy -= player.speed;
+            if (keys["ArrowDown"] || keys["s"] || keys["S"]) dy += player.speed;
+
+            if (dx !== 0 && !checkCollision(player.x + dx, player.y)) {
+                player.x += dx;
+            }
+            if (dy !== 0 && !checkCollision(player.x, player.y + dy)) {
+                player.y += dy;
+            }
+
+            let stage = stages[currentStageIndex];
+
+            stage.items.forEach(item => {
+                if (!item.collected) {
+                    let itemPixelX = item.x * tileSize + 10;
+                    let itemPixelY = item.y * tileSize + 10;
+                    let dist = Math.hypot(player.x - itemPixelX, player.y - itemPixelY);
+                    if (dist < 30) {
+                        item.collected = true;
+                        playCollectSound();
+                    }
+                }
+            });
+
+            let targetPixelX = stage.targetX * tileSize + 10;
+            let targetPixelY = stage.targetY * tileSize + 10;
+            let distToTarget = Math.hypot(player.x - targetPixelX, player.y - targetPixelY);
+            if (distToTarget < 35) {
+                openModal(stage);
+            }
+        }
+
+        function openModal(obj) {
+            activeTarget = obj;
+            userInput = "";
+            document.getElementById("input-display").innerText = "";
+            document.getElementById("message").innerText = "";
+
+            setupKeyboard(obj);
+
+            if (obj.type === "boss") {
+                document.getElementById("modal-title").innerText = "🔥 終極魔王挑戰：巨龍出現！";
+                document.getElementById("target-info").innerHTML = `${obj.icon} <b>${obj.word}</b> <span style="color:#ff0055; font-size:16px;">(${obj.english})</span><br><span style="font-size:14px; color:#f39c12;">輸入正確咒語擊敗巨龍！</span>`;
+            } else {
+                document.getElementById("modal-title").innerText = `🔓 第 ${currentStageIndex + 1} 關：解鎖寶箱`;
+                document.getElementById("target-info").innerHTML = `${obj.icon} <b>${obj.word}</b> <span style="color:#0ff; font-size:16px;">(${obj.english})</span>`;
+            }
+
+            document.getElementById("modal").style.display = "block";
+        }
+
+        function setupKeyboard(stage) {
+            const keyboardDiv = document.getElementById("keyboard");
+            keyboardDiv.innerHTML = "";
+            
+            let shuffledKeys = [...stage.poolKeys].sort(() => Math.random() - 0.5);
+
+            shuffledKeys.forEach(symbol => {
+                const btn = document.createElement("button");
+                btn.innerText = symbol;
+                btn.className = "key-btn" + (["˙", "ˊ", "ˇ", "ˋ"].includes(symbol) ? " tone" : "");
+                btn.onclick = () => addSymbol(symbol);
+                keyboardDiv.appendChild(btn);
+            });
+        }
+
+        function addSymbol(symbol) {
+            userInput += symbol;
+            document.getElementById("input-display").innerText = userInput;
+            playClickSound();
+        }
+
+        function clearInput() {
+            userInput = "";
+            document.getElementById("input-display").innerText = "";
+            document.getElementById("message").innerText = "";
+            playClickSound();
+        }
+
+        function checkAnswer() {
+            const msg = document.getElementById("message");
+            if (userInput === activeTarget.pinyin) {
+                msg.style.color = "#2ecc71";
+                if (activeTarget.type === "boss") {
+                    msg.innerText = "🏆 太神啦！擊敗巨龍！";
+                } else {
+                    msg.innerText = "🎉 答對了！寶箱解鎖！";
+                }
+                
+                playSuccessSound();
+
+                setTimeout(() => {
+                    document.getElementById("modal").style.display = "none";
+                    activeTarget = null;
+                    currentStageIndex++;
+                    
+                    if (currentStageIndex >= stages.length) {
+                        clearInterval(timerInterval);
+                        let rankTitle = totalSeconds < 60 ? "🏆【傳說級閃電速通大師】" : "🌟【冒險勇者】";
+                        alert(`🎉 恭喜定緁通關全系列！\n總花費時間：${totalSeconds} 秒\n獲得隱藏頭銜：${rankTitle}`);
+                        currentStageIndex = 0;
+                        totalSeconds = 0;
+                    }
+                    document.getElementById("current-stage").innerText = currentStageIndex + 1;
+                    
+                    resetStage();
+                }, 1200);
+            } else {
+                msg.style.color = "#e74c3c";
+                msg.innerText = "❌ 咒語不對喔，再試試看！";
+                playErrorSound();
+            }
+        }
+
+        resetStage();
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            let stage = stages[currentStageIndex];
+
+            ctx.strokeStyle = "#1f4068";
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < canvas.width; i += tileSize) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            }
+            for (let j = 0; j < canvas.height; j += tileSize) {
+                ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
+            }
+
+            ctx.fillStyle = "#0f3460";
+            ctx.strokeStyle = "#e94560";
+            ctx.lineWidth = 2;
+            for (let wall of stage.walls) {
+                let wx = wall.x * tileSize;
+                let wy = wall.y * tileSize;
+                let ww = wall.w * tileSize;
+                let wh = wall.h * tileSize;
+                ctx.fillRect(wx, wy, ww, wh);
+                ctx.strokeRect(wx, wy, ww, wh);
+            }
+
+            let tx = stage.targetX * tileSize + 5;
+            let ty = stage.targetY * tileSize + 5;
+            ctx.fillStyle = stage.color;
+            ctx.fillRect(tx, ty, 40, 40);
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 14px sans-serif";
+            if (stage.type === "boss") {
+                ctx.fillText(`🔥 最終 BOSS：${stage.word} (隨時可挑戰)`, tx - 65, ty - 10);
+            } else {
+                ctx.fillText(`${stage.icon} 第 ${currentStageIndex + 1} 關：${stage.word} (可速通)`, tx - 45, ty - 10);
+            }
+
+            stage.items.forEach(item => {
+                if (!item.collected) {
+                    let ix = item.x * tileSize + 10;
+                    let iy = item.y * tileSize + 10;
+                    ctx.fillStyle = "#f39c12";
+                    ctx.fillRect(ix, iy, 28, 28);
+                    ctx.fillStyle = "#000";
+                    ctx.font = "bold 18px sans-serif";
+                    ctx.fillText(item.symbol, ix + 4, iy + 21);
+                }
+            });
+
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = "#fff";
+            ctx.font = "13px sans-serif";
+            ctx.fillText("🛡️ 勇者", player.x - 4, player.y - 8);
+
+            // 畫左上角背包注音收集進度條
+            let collectedList = stage.items.filter(i => i.collected).map(i => i.symbol).join(" ");
+            ctx.fillStyle = "rgba(0,0,0,0.75)";
+            ctx.fillRect(10, 10, 280, 36);
+            ctx.strokeStyle = "#0ff";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(10, 10, 280, 36);
+            ctx.fillStyle = "#0ff";
+            ctx.font = "15px sans-serif";
+            ctx.fillText(`背包注音：[ ${collectedList} ]`, 18, 33);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

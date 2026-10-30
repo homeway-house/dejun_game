@@ -4,490 +4,1388 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>定緁的種花大作戰 | Dejun's Flower Grower</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Noto+Sans+TC:wght@500;700;900&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #1a1a2e; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 100vh; overflow-x: hidden; padding: 10px; }
-        header { text-align: center; margin-bottom: 10px; width: 100%; max-width: 900px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        h1 { font-size: 1.5rem; color: #4ecca3; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .top-controls { display: flex; gap: 10px; align-items: center; }
-        .lang-btn, .sound-btn { background: #0f3460; color: #fff; border: 1px solid #4ecca3; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .lang-btn:hover, .sound-btn:hover { background: #4ecca3; color: #1a1a2e; }
-        
-        .game-container { display: flex; gap: 15px; width: 100%; max-width: 900px; height: 560px; background: #16213e; border-radius: 15px; border: 2px solid #0f3460; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; }
-        
-        /* 左側高度塔與進度條 */
-        .tower-panel { width: 130px; background: #0f3460; display: flex; flex-direction: column; align-items: center; padding: 15px 5px; border-right: 2px solid #1a1a2e; position: relative; }
-        .tower-title { font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; color: #e94560; text-align: center; }
-        .tower-track { width: 24px; height: 420px; background: #1a1a2e; border-radius: 12px; position: relative; border: 2px solid #4ecca3; overflow: hidden; }
-        .tower-fill { position: absolute; bottom: 0; width: 100%; background: linear-gradient(to top, #4ecca3, #e94560, #f9ed69); height: 0%; transition: height 0.1s linear; }
-        .pointer { position: absolute; left: -10px; width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 12px solid #fff; transition: bottom 0.1s linear; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8)); }
-        .milestones { position: absolute; height: 420px; width: 100px; left: 35px; display: flex; flex-direction: column; justify-content: space-between; font-size: 0.75rem; pointer-events: none; padding: 5px 0; }
-        .milestone-item { display: flex; align-items: center; gap: 4px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
-
-        /* 中間遊戲畫布區 */
-        .canvas-panel { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; background: linear-gradient(to bottom, #87CEEB, #E0F6FF); overflow: hidden; cursor: pointer; }
-        canvas { display: block; width: 100%; height: 100%; }
-        .click-hint { position: absolute; top: 15px; background: rgba(0, 0, 0, 0.6); color: #fff; padding: 6px 15px; border-radius: 20px; font-size: 0.9rem; pointer-events: none; animation: pulse 1.5s infinite; z-index: 10; }
-        
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
-
-        /* 右側升級商店 */
-        .upgrade-panel { width: 300px; background: #0f3460; display: flex; flex-direction: column; padding: 12px; border-left: 2px solid #1a1a2e; overflow-y: auto; }
-        .upgrade-title { font-size: 1rem; font-weight: bold; margin-bottom: 8px; color: #f9ed69; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .stats-box { font-size: 0.8rem; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px; margin-bottom: 10px; line-height: 1.4; border: 1px solid rgba(255,255,255,0.05); }
-        .upgrade-list { display: flex; flex-direction: column; gap: 8px; }
-        .upgrade-btn { background: #1a1a2e; border: 1px solid #4ecca3; color: #fff; padding: 8px 10px; border-radius: 8px; cursor: pointer; text-align: left; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
-        .upgrade-btn:hover:not(:disabled) { background: #4ecca3; color: #1a1a2e; transform: translateY(-1px); }
-        .upgrade-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; }
-        .upgrade-info { display: flex; flex-direction: column; }
-        .upgrade-name { font-size: 0.8rem; font-weight: bold; }
-        .upgrade-cost { font-size: 0.7rem; color: #f9ed69; }
-        .upgrade-btn:hover:not(:disabled) .upgrade-cost { color: #1a1a2e; }
-        .upgrade-lvl { font-size: 0.75rem; background: #e94560; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
-
-        /* 底部資訊列 */
-        .bottom-bar { width: 100%; max-width: 900px; display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.85rem; color: #a0a0a0; padding: 0 5px; }
+        body {
+            font-family: 'Fredoka', 'Nunito', 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #dcfce7 50%, #fef9c3 100%);
+            user-select: none;
+            overflow-x: hidden;
+        }
+        /* 隱藏捲軸但保留滾動 */
+        .no-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .no-scrollbar::-webkit-scrollbar-track {
+            background: rgba(254, 243, 199, 0.5);
+            border-radius: 8px;
+        }
+        .no-scrollbar::-webkit-scrollbar-thumb {
+            background: #f59e0b;
+            border-radius: 8px;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.9); }
+            100% { opacity: 0; transform: translateY(-55px) scale(1.15); }
+        }
+        .floating-text {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            z-index: 40;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.25);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+            50% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
+        }
+        .water-btn-pulse {
+            animation: pulseGlow 2s infinite;
+        }
+        /* 手繪風立體粗邊框 */
+        .sketch-panel {
+            border: 3px solid #334155;
+            box-shadow: 4px 6px 0px #334155;
+        }
+        .sketch-btn {
+            border: 2.5px solid #1e293b;
+            box-shadow: 2px 4px 0px #1e293b;
+            transition: all 0.1s ease;
+        }
+        .sketch-btn:active:not(:disabled) {
+            transform: translate(2px, 3px);
+            box-shadow: 0px 1px 0px #1e293b;
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col items-center justify-between p-2 sm:p-4 text-slate-800">
 
-    <header>
-        <h1 id="game-title">🌱 定緁的種花大作戰</h1>
-        <div class="top-controls">
-            <button class="sound-btn" id="sound-toggle" onclick="toggleSound()">🔊 音效: 開</button>
-            <button class="lang-btn" onclick="toggleLanguage()">🌐 English / 中文</button>
+    <!-- 頂部標題列與中英切換 / 音效控制 -->
+    <header class="w-full max-w-6xl bg-white/95 backdrop-blur-md rounded-2xl sketch-panel p-3 sm:px-5 mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-amber-100 border-2 border-slate-800 flex items-center justify-center text-3xl shadow-inner">
+                🌻
+            </div>
+            <div>
+                <div class="flex items-center flex-wrap gap-2">
+                    <h1 id="uiGameTitle" class="text-lg sm:text-2xl font-black text-emerald-700 tracking-wide">定緁的種花大作戰</h1>
+                    <span id="uiDesignerBadge" class="text-xs font-extrabold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-300">設計師：定緁</span>
+                    <span id="stageBadge" class="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-400">🌱 地面萌芽期</span>
+                </div>
+                <p id="uiSubtitle" class="text-xs text-slate-500 font-bold mt-0.5">目標：讓花莖長高穿過雲朵(1,000cm)、月亮(5萬cm)，衝向太陽(1,000,000cm)！</p>
+            </div>
+        </div>
+
+        <!-- 資源數據與語言/音效按鈕 -->
+        <div class="flex items-center flex-wrap gap-2 sm:gap-3 ml-auto">
+            <!-- 水滴數量 -->
+            <div class="flex items-center gap-2 bg-sky-50 px-3 py-1.5 rounded-xl border-2 border-sky-300">
+                <span class="text-2xl">💧</span>
+                <div>
+                    <div id="uiWaterLabel" class="text-[11px] text-sky-700 font-bold leading-none">水滴能量</div>
+                    <div id="waterCount" class="text-base sm:text-xl font-black text-blue-600 leading-tight">15</div>
+                </div>
+            </div>
+
+            <!-- 花莖高度 -->
+            <div class="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-xl border-2 border-emerald-300">
+                <span class="text-2xl">📏</span>
+                <div>
+                    <div id="uiHeightLabel" class="text-[11px] text-emerald-700 font-bold leading-none">花莖高度 (目標 1M)</div>
+                    <div id="flowerHeightDisplay" class="text-base sm:text-xl font-black text-emerald-600 leading-tight">10 cm</div>
+                </div>
+            </div>
+
+            <!-- 自動成長速度 -->
+            <div class="hidden sm:flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-xl border-2 border-amber-300">
+                <span class="text-xl">⚡</span>
+                <div>
+                    <div id="uiAutoRateLabel" class="text-[11px] text-amber-800 font-bold leading-none">自動成長速度</div>
+                    <div id="autoRateDisplay" class="text-sm font-black text-amber-600 leading-tight">+0 cm/s</div>
+                </div>
+            </div>
+
+            <!-- 🌐 中英文即時切換按鈕 -->
+            <button id="langToggleBtn" onclick="toggleLanguage()" class="sketch-btn bg-indigo-500 hover:bg-indigo-600 text-white font-black px-3 py-2 rounded-xl text-sm flex items-center gap-1.5 cursor-pointer" title="Switch Language / 切換語言">
+                <span>🌐</span>
+                <span id="langBtnText">English</span>
+            </button>
+
+            <!-- 🔊 音效切換按鈕 -->
+            <button id="soundToggleBtn" onclick="toggleSound()" class="sketch-btn bg-amber-300 hover:bg-amber-400 text-slate-900 font-black px-3 py-2 rounded-xl text-sm flex items-center gap-1.5 cursor-pointer" title="開關音效 / Toggle Sound">
+                <span id="soundIcon" class="text-lg">🔊</span>
+                <span id="soundText" class="hidden md:inline">音效開</span>
+            </button>
         </div>
     </header>
 
-    <div class="game-container">
-        <!-- 左側高度塔 -->
-        <div class="tower-panel">
-            <div class="tower-title" id="tower-header">高度測量塔</div>
-            <div style="position: relative;">
-                <div class="tower-track">
-                    <div class="tower-fill" id="tower-fill"></div>
-                </div>
-                <div class="pointer" id="tower-pointer" style="bottom: 0%;"></div>
-                <div class="milestones">
-                    <div class="milestone-item">🌌 <span>2,000k</span></div>
-                    <div class="milestone-item">☀️ <span>1,000k</span></div>
-                    <div class="milestone-item">🌕 <span>50k</span></div>
-                    <div class="milestone-item">☁️ <span>1k</span></div>
-                    <div class="milestone-item">🌱 <span>0</span></div>
-                </div>
-            </div>
-        </div>
+    <!-- 主遊戲區：左（三段高度塔）、中（動態長高花朵與澆水桶）、右（UPGRADE升級選單） -->
+    <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow items-stretch">
 
-        <!-- 中間遊戲畫布 -->
-        <div class="canvas-panel" id="click-area" onclick="handleWaterClick(event)">
-            <div class="click-hint" id="hint-text">✨ 點擊畫面或澆水筒來灌溉花朵！</div>
-            <canvas id="gameCanvas"></canvas>
-        </div>
+        <!-- 左＋中：高度進度塔與互動花朵畫布 (7 欄) -->
+        <section class="lg:col-span-7 bg-white rounded-3xl sketch-panel p-3 sm:p-4 flex flex-col justify-between relative overflow-hidden min-h-[500px] sm:min-h-[560px]">
+            
+            <div class="grid grid-cols-12 gap-2 sm:gap-4 h-full flex-grow items-stretch">
+                
+                <!-- 左側：定緁手繪風「太陽 / 月亮 / 雲朵」三段高度進度塔 (4 欄) -->
+                <div class="col-span-4 sm:col-span-4 bg-slate-50 rounded-2xl border-2 border-slate-300 p-2 sm:p-3 flex flex-col justify-between relative">
+                    <div id="uiTowerTitle" class="text-center font-black text-xs sm:text-sm text-slate-700 bg-white border border-slate-300 rounded-lg py-1 shadow-sm">
+                        🗼 高度里程碑
+                    </div>
 
-        <!-- 右側升級商店 -->
-        <div class="upgrade-panel">
-            <div class="upgrade-title">
-                <span id="shop-title">🛠️ 升級實驗室</span>
-                <span id="designer-badge" style="font-size: 0.7rem; color: #4ecca3;">By Dejun</span>
+                    <!-- 垂直高度柱本體 -->
+                    <div class="relative flex-grow my-3 flex items-center justify-center">
+                        
+                        <!-- 左側天體圖示 (太陽、月球坑洞、雲朵) -->
+                        <div class="flex flex-col justify-between h-full py-1 pr-1.5 sm:pr-2 text-right select-none z-10">
+                            <!-- 頂部：太陽 1,000,000 cm -->
+                            <div class="flex flex-col items-center">
+                                <svg class="w-9 h-9 sm:w-11 sm:h-11 text-amber-500 drop-shadow" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round">
+                                    <circle cx="32" cy="32" r="14" fill="#fde047" stroke="#ca8a04"/>
+                                    <line x1="32" y1="6" x2="32" y2="12"/><line x1="32" y1="52" x2="32" y2="58"/>
+                                    <line x1="6" y1="32" x2="12" y2="32"/><line x1="52" y1="32" x2="58" y2="32"/>
+                                    <line x1="13" y1="13" x2="18" y2="18"/><line x1="46" y1="46" x2="51" y2="51"/>
+                                    <line x1="51" y1="13" x2="46" y2="18"/><line x1="18" y1="46" x2="13" y2="51"/>
+                                </svg>
+                                <span id="uiSunLabel" class="text-[10px] sm:text-xs font-black text-amber-700 bg-amber-100 px-1.5 rounded border border-amber-300 mt-0.5">太陽 1M</span>
+                            </div>
+
+                            <!-- 66%：月亮 (含隕石坑洞，還原手繪圖) 50,000 cm -->
+                            <div class="flex flex-col items-center">
+                                <svg class="w-9 h-9 sm:w-11 sm:h-11 drop-shadow" viewBox="0 0 64 64">
+                                    <circle cx="32" cy="32" r="20" fill="#fef08a" stroke="#475569" stroke-width="3"/>
+                                    <circle cx="24" cy="24" r="3.5" fill="#eab308" stroke="#64748b" stroke-width="1.5"/>
+                                    <circle cx="38" cy="28" r="4.5" fill="#eab308" stroke="#64748b" stroke-width="1.5"/>
+                                    <circle cx="28" cy="39" r="3" fill="#eab308" stroke="#64748b" stroke-width="1.5"/>
+                                    <circle cx="39" cy="41" r="2.5" fill="#eab308" stroke="#64748b" stroke-width="1.5"/>
+                                    <circle cx="22" cy="33" r="2" fill="#eab308" stroke="#64748b" stroke-width="1.5"/>
+                                </svg>
+                                <span id="uiMoonLabel" class="text-[10px] sm:text-xs font-black text-indigo-700 bg-indigo-100 px-1.5 rounded border border-indigo-300 mt-0.5">月亮 5萬</span>
+                            </div>
+
+                            <!-- 33%：雲朵 1,000 cm -->
+                            <div class="flex flex-col items-center">
+                                <svg class="w-9 h-9 sm:w-11 sm:h-11 drop-shadow" viewBox="0 0 64 64">
+                                    <path d="M18 44 H48 A10 10 0 0 0 50 25 A13 13 0 0 0 26 21 A11 11 0 0 0 14 33 A9 9 0 0 0 18 44 Z" fill="#e0f2fe" stroke="#475569" stroke-width="3" stroke-linejoin="round"/>
+                                </svg>
+                                <span id="uiCloudLabel" class="text-[10px] sm:text-xs font-black text-sky-700 bg-sky-100 px-1.5 rounded border border-sky-300 mt-0.5">雲朵 1千</span>
+                            </div>
+
+                            <!-- 底部：起點地面 -->
+                            <div class="flex flex-col items-center">
+                                <span id="uiGroundLabel" class="text-[10px] sm:text-xs font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300">🌱 地面 0</span>
+                            </div>
+                        </div>
+
+                        <!-- 三段式高塔與三角形指針 ▷ -->
+                        <div class="relative h-full w-11 sm:w-14 bg-gradient-to-b from-amber-200 via-indigo-200 to-sky-100 rounded-xl border-3 border-slate-700 overflow-visible flex flex-col justify-end shadow-inner" style="border-width: 3px;">
+                            
+                            <!-- 頂部太陽終點線 -->
+                            <div class="absolute top-0 left-0 right-0 h-2.5 bg-amber-400 border-b-2 border-slate-700 z-10 rounded-t-lg"></div>
+                            <!-- 66% 月亮分隔線 -->
+                            <div class="absolute left-0 right-0 border-t-2 border-dashed border-slate-700 z-10" style="bottom: 66.66%;"></div>
+                            <!-- 33% 雲朵分隔線 -->
+                            <div class="absolute left-0 right-0 border-t-2 border-dashed border-slate-700 z-10" style="bottom: 33.33%;"></div>
+
+                            <!-- 綠色植物攀爬進度條填充 -->
+                            <div id="towerProgressFill" class="w-full bg-gradient-to-t from-emerald-600 via-emerald-400 to-lime-300 rounded-b-lg transition-all duration-150 relative" style="height: 2%;">
+                                <div class="absolute top-0 left-0 right-0 h-1.5 bg-white/60"></div>
+                            </div>
+
+                            <!-- 左下角手繪風三角形指針 ▷ -->
+                            <div id="towerPointer" class="absolute -left-4 sm:-left-5 transform translate-y-1/2 transition-all duration-150 z-20 flex items-center" style="bottom: 2%;">
+                                <svg class="w-5 h-5 text-rose-500 drop-shadow" viewBox="0 0 24 24" fill="currentColor" stroke="#1e293b" stroke-width="2">
+                                    <polygon points="4,4 20,12 4,20" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 下一個目標倒數文字 -->
+                    <div id="nextGoalText" class="text-center text-[11px] font-bold text-slate-600 bg-amber-50 rounded-lg py-1 px-1 border border-amber-200">
+                        距離雲朵還差 990 cm
+                    </div>
+                </div>
+
+                <!-- 中央：動態 Canvas 花莖無限生長與澆水壺區 (8 欄) -->
+                <div class="col-span-8 sm:col-span-8 relative rounded-2xl border-3 border-slate-700 overflow-hidden flex flex-col justify-end bg-sky-200 shadow-inner" style="border-width: 3px;" id="canvasContainer">
+                    
+                    <!-- 頂部浮動資訊：葉子片數與成長倍率 -->
+                    <div class="absolute top-3 left-3 right-3 flex justify-between items-center z-20 pointer-events-none">
+                        <div class="bg-white/85 backdrop-blur px-3 py-1 rounded-xl border-2 border-slate-700 text-xs sm:text-sm font-black text-slate-800 shadow-sm">
+                            🍃 <span id="uiLeavesLabel">葉子數量:</span> <span id="leafCountText" class="text-emerald-600">2</span>
+                        </div>
+                        <div class="bg-white/85 backdrop-blur px-3 py-1 rounded-xl border-2 border-slate-700 text-xs sm:text-sm font-black text-slate-800 shadow-sm">
+                            <span id="uiMultiplierLabel">成長倍率:</span> <span id="multiplierText" class="text-rose-600">x1.0</span>
+                        </div>
+                    </div>
+
+                    <!-- 互動 Canvas：繪製天空漸層、雲朵、星星、月球、太陽、無限抽長的花莖、葉子、花盆與噴水粒子 -->
+                    <canvas id="flowerCanvas" class="w-full h-full block cursor-pointer" onclick="handleCanvasWaterClick(event)"></canvas>
+
+                    <!-- 底部手繪風「帶水管澆水桶」與手動澆水按鈕區 -->
+                    <div class="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2 z-20 pointer-events-none">
+                        <div id="uiCanvasTip" class="bg-black/45 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[11px] font-bold hidden sm:block">
+                            💡 點擊畫面、空白鍵或右方水桶幫花澆水！
+                        </div>
+                        <button id="waterBtn" onclick="manualWater(event)" class="pointer-events-auto ml-auto sketch-btn water-btn-pulse bg-gradient-to-b from-sky-400 to-blue-600 hover:from-sky-300 hover:to-blue-500 text-white font-black px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl flex items-center gap-2.5 text-sm sm:text-base cursor-pointer">
+                            <!-- 還原定緁畫作：帶有彎曲水管的澆水桶 SVG -->
+                            <svg class="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0" viewBox="0 0 64 64" fill="none">
+                                <!-- 彎曲噴水管 -->
+                                <path d="M28 18 C22 4, 8 6, 6 20" stroke="#bae6fd" stroke-width="5" stroke-linecap="round"/>
+                                <rect x="2" y="18" width="8" height="6" rx="2" fill="#fde047" stroke="#1e293b" stroke-width="2"/>
+                                <!-- 水桶身 -->
+                                <rect x="22" y="18" width="32" height="40" rx="6" fill="#eff6ff" stroke="#1e293b" stroke-width="3"/>
+                                <!-- 水桶上的水滴標誌 -->
+                                <path d="M38 27 C38 27, 29 38, 29 44 A9 9 0 0 0 47 44 C47 38, 38 27, 38 27 Z" fill="#38bdf8" stroke="#1e293b" stroke-width="2.5"/>
+                            </svg>
+                            <div class="text-left leading-tight">
+                                <div id="uiWaterBtnTitle" class="text-xs text-sky-100 font-bold">點擊澆水桶</div>
+                                <div id="uiWaterBtnEffect">💧+1 / 長高 +1cm</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
             </div>
-            <div class="stats-box">
-                <div id="stat-height">🌿 高度: 0 cm</div>
-                <div id="stat-drops">💧 水滴: 0 滴</div>
-                <div id="stat-power">⚡ 點擊力: +1 cm</div>
+        </section>
+
+        <!-- 右側：定緁手繪稿 UPGRADE 升級選單 (5 欄) -->
+        <section class="lg:col-span-5 bg-amber-50/95 rounded-3xl sketch-panel p-3 sm:p-4 flex flex-col justify-between">
+            <!-- 手繪風 UPGRADE 招牌標題 -->
+            <div class="flex items-center justify-between border-b-3 border-slate-700 pb-2.5 mb-2.5" style="border-bottom-width: 3px;">
+                <div class="flex items-center gap-2">
+                    <div class="bg-amber-300 border-2 border-slate-800 px-3 py-1 rounded-xl shadow-sm transform -rotate-1">
+                        <span class="text-lg sm:text-xl font-black tracking-wider text-slate-900">UPGRADE</span>
+                    </div>
+                    <span id="uiUpgradeSub" class="text-sm font-black text-slate-700">升級研究所</span>
+                </div>
+                <span id="uiUpgradeCountBadge" class="text-xs font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-300 text-slate-600">
+                    共 6 種強化項目
+                </span>
             </div>
-            <div class="upgrade-list" id="upgrade-list-container">
-                <!-- 動態生成升級按鈕 -->
+
+            <!-- 6 大升級卡片清單 -->
+            <div id="upgradeList" class="space-y-2.5 overflow-y-auto max-h-[460px] pr-1 no-scrollbar flex-grow">
+                <!-- 由 JavaScript 根據目前語言動態渲染 -->
+            </div>
+
+            <!-- 底部小撇步與重置按鈕 -->
+            <div class="mt-3 pt-2 border-t-2 border-amber-200 flex items-center justify-between text-xs text-slate-500 font-bold">
+                <span id="uiFooterNote">🎵 每次長出新葉子與突破高度都有特殊音效！</span>
+                <button id="uiResetBtn" onclick="resetGamePrompt()" class="text-rose-600 hover:underline font-black cursor-pointer">重新開始</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 突破太陽 1,000,000 cm 過關視窗 -->
+    <div id="winModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center sketch-panel animate-bounce">
+            <div class="text-6xl mb-3">☀️🌻👑</div>
+            <h3 id="uiWinTitle" class="text-2xl sm:text-3xl font-black text-amber-600 mb-2">太神啦！花朵碰到太陽過關了！</h3>
+            <p id="uiWinDesc" class="text-slate-600 mb-4 font-bold text-sm sm:text-base">
+                成功把定緁的花養到 1,000,000 cm (1M)，穿越了雲朵與月球，完成了最偉大的太空種花挑戰！
+            </p>
+            <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3 mb-5 text-xs sm:text-sm font-bold text-slate-700">
+                🍃 <span id="uiWinLeavesLabel">總共長出的葉子：</span><span id="winLeafCount" class="text-emerald-600 font-black">0</span>
+            </div>
+            <div class="flex gap-3">
+                <button id="uiWinKeepBtn" onclick="closeWinModal()" class="flex-1 py-3 sketch-btn bg-emerald-400 hover:bg-emerald-500 text-slate-900 font-black rounded-2xl text-base cursor-pointer">
+                    繼續無限長高 🚀
+                </button>
+                <button id="uiWinReplayBtn" onclick="confirmResetGame()" class="py-3 px-4 sketch-btn bg-amber-200 hover:bg-amber-300 text-slate-900 font-black rounded-2xl text-sm cursor-pointer">
+                    再玩一局
+                </button>
             </div>
         </div>
     </div>
 
-    <div class="bottom-bar">
-        <span id="footer-designer">🎮 遊戲設計：定緁 (Dejun)</span>
-        <span id="footer-status">狀態：冒險成長中...</span>
+    <!-- 確認重置視窗 -->
+    <div id="resetModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center sketch-panel">
+            <div class="text-4xl mb-2">🌱</div>
+            <h3 id="uiResetModalTitle" class="text-xl font-black text-slate-800 mb-2">確定要重新種花嗎？</h3>
+            <p id="uiResetModalDesc" class="text-sm text-slate-600 font-bold mb-5">目前的花朵高度與升級將會歸零，從頭開始挑戰喔！</p>
+            <div class="flex gap-3">
+                <button id="uiResetCancelBtn" onclick="closeResetModal()" class="flex-1 py-2.5 sketch-btn bg-slate-200 hover:bg-slate-300 font-black rounded-xl cursor-pointer">取消</button>
+                <button id="uiResetConfirmBtn" onclick="confirmResetGame()" class="flex-1 py-2.5 sketch-btn bg-rose-500 hover:bg-rose-600 text-white font-black rounded-xl cursor-pointer">確定重來</button>
+            </div>
+        </div>
     </div>
 
-<script>
-    let lang = 'zh'; // 'zh' 或 'en'
+    <script>
+        // ==========================================
+        // 1. 中英雙語字典設定 (Instant Bilingual Dictionary)
+        // ==========================================
+        let currentLang = 'zh'; // 預設中文 ('zh' 或 'en')
 
-    const t = {
-        zh: {
-            title: "🌱 定緁的種花大作戰",
-            tower: "高度測量塔",
-            hint: "✨ 點擊畫面或澆水筒來灌溉花朵！",
-            shop: "🛠️ 升級實驗室",
-            designer: "By Dejun",
-            footerDesigner: "🎮 遊戲設計：定緁 (Dejun)",
-            status: "狀態：冒險成長中...",
-            soundOn: "🔊 音效: 開",
-            soundOff: "🔇 音效: 關",
-            upgrades: [
-                { name: "🌱 生長速度 +1", desc: "每次點擊長更高" },
-                { name: "🌿 超級萌芽 +5", desc: "瞬間大幅抽高" },
-                { name: "💧 水滴加倍 +15", desc: "增加每次獲得水滴" },
-                { name: "⚡ 遊戲速度 x2", desc: "解鎖兩倍成長爆發" },
-                { name: "🤖 自動澆水器", desc: "每秒自動灌溉花朵" },
-                { name: "☀️ 太陽能肥料", desc: "解鎖太陽能量加成" }
-            ]
-        },
-        en: {
-            title: "🌱 Dejun's Flower Grower",
-            tower: "Height Tower",
-            hint: "✨ Click anywhere or watering can to grow!",
-            shop: "🛠️ Growth Lab",
-            designer: "By Dejun",
-            footerDesigner: "🎮 Game Designer: Dejun",
-            status: "Status: Growing...",
-            soundOn: "🔊 Sound: ON",
-            soundOff: "🔇 Sound: OFF",
-            upgrades: [
-                { name: "🌱 Grow Speed +1", desc: "Grow higher per click" },
-                { name: "🌿 Super Sprout +5", desc: "Instant height boost" },
-                { name: "💧 Water Boost +15", desc: "More drops per click" },
-                { name: "⚡ Speed x2 Boost", desc: "Unlock double growth" },
-                { name: "🤖 Auto Waterer", desc: "Automatic watering/sec" },
-                { name: "Mega Sun Fertilizer", desc: "Unlock solar fertilizer" }
-            ]
-        }
-    };
-
-    function toggleLanguage() {
-        lang = lang === 'zh' ? 'en' : 'zh';
-        document.getElementById('game-title').innerText = t[lang].title;
-        document.getElementById('tower-header').innerText = t[lang].tower;
-        document.getElementById('hint-text').innerText = t[lang].hint;
-        document.getElementById('shop-title').innerHTML = `<span>${t[lang].shop}</span><span style="font-size: 0.7rem; color: #4ecca3;">${t[lang].designer}</span>`;
-        document.getElementById('footer-designer').innerText = t[lang].footerDesigner;
-        updateUI();
-        initUpgrades();
-    }
-
-    let soundEnabled = true;
-    function toggleSound() {
-        soundEnabled = !soundEnabled;
-        document.getElementById('sound-toggle').innerText = soundEnabled ? t[lang].soundOn : t[lang].soundOff;
-    }
-
-    // 遊戲核心數值
-    let height = 0;
-    let maxGameHeight = 2000000; // 200萬公分（銀河系隱藏結局）
-    let drops = 0;
-    let clickPower = 1;
-    let dropPower = 1;
-    let autoWaterRate = 0;
-    let speedMultiplier = 1;
-    let sunMultiplier = 1;
-
-    let upgradesData = [
-        { id: 0, cost: 15, costMult: 1.8, lvl: 0, effect: () => { clickPower += 1; } },
-        { id: 1, cost: 100, costMult: 2.1, lvl: 0, effect: () => { height += 50; } },
-        { id: 2, cost: 250, costMult: 2.2, lvl: 0, effect: () => { dropPower += 3; } },
-        { id: 3, cost: 600, costMult: 2.5, lvl: 0, effect: () => { speedMultiplier *= 1.5; } },
-        { id: 4, cost: 1500, costMult: 2.8, lvl: 0, effect: () => { autoWaterRate += 2; } },
-        { id: 5, cost: 5000, costMult: 3.0, lvl: 0, effect: () => { sunMultiplier *= 2; } }
-    ];
-
-    function initUpgrades() {
-        const container = document.getElementById('upgrade-list-container');
-        container.innerHTML = '';
-        upgradesData.forEach((item, index) => {
-            const dataObj = t[lang].upgrades[index];
-            const btn = document.createElement('button');
-            btn.className = 'upgrade-btn';
-            btn.id = `upgrade-btn-${index}`;
-            btn.onclick = () => buyUpgrade(index);
-            btn.innerHTML = `
-                <div class="upgrade-info">
-                    <span class="upgrade-name">${dataObj.name}</span>
-                    <span class="upgrade-cost" id="cost-${index}">💧 ${Math.floor(item.cost)}</span>
-                </div>
-                <span class="upgrade-lvl" id="lvl-${index}">Lv.${item.lvl}</span>
-            `;
-            container.appendChild(btn);
-        });
-        updateUpgradesUI();
-    }
-
-    function buyUpgrade(index) {
-        let item = upgradesData[index];
-        if (drops >= item.cost) {
-            drops -= item.cost;
-            item.cost *= item.costMult;
-            item.lvl++;
-            item.effect();
-            playAudio('upgrade');
-            updateUI();
-            updateUpgradesUI();
-        }
-    }
-
-    function updateUpgradesUI() {
-        upgradesData.forEach((item, index) => {
-            const btn = document.getElementById(`upgrade-btn-${index}`);
-            const costEl = document.getElementById(`cost-${index}`);
-            const lvlEl = document.getElementById(`lvl-${index}`);
-            if (btn && costEl && lvlEl) {
-                costEl.innerText = `💧 ${Math.floor(item.cost)}`;
-                lvlEl.innerText = `Lv.${item.lvl}`;
-                btn.disabled = drops < item.cost;
+        const I18N = {
+            zh: {
+                langSwitchBtn: 'English',
+                gameTitle: '定緁的種花大作戰',
+                designerBadge: '設計師：定緁',
+                subtitle: '目標：讓花莖長高穿過雲朵(1,000cm)、月亮(5萬cm)，衝向太陽(1,000,000cm)！',
+                waterLabel: '水滴能量',
+                heightLabel: '花莖高度 (目標 1M)',
+                autoRateLabel: '自動成長速度',
+                soundOn: '音效開',
+                soundOff: '靜音中',
+                towerTitle: '🗼 高度里程碑',
+                sunLabel: '太陽 1M',
+                moonLabel: '月亮 5萬',
+                cloudLabel: '雲朵 1千',
+                groundLabel: '🌱 地面 0',
+                leavesLabel: '葉子數量:',
+                multiplierLabel: '成長倍率:',
+                canvasTip: '💡 點擊畫面、空白鍵或右方水桶幫花澆水！',
+                waterBtnTitle: '點擊澆水桶',
+                waterBtnEffect: (w, g) => `💧+${w} / 長高 +${g}cm`,
+                upgradeSub: '升級研究所',
+                upgradeCountBadge: '共 6 種強化項目',
+                buyBtn: '⬆️ 升級',
+                footerNote: '🎵 每次長出新葉子與突破高度都有特殊音效！',
+                resetBtn: '重新開始',
+                stageGround: '🌱 地面衝刺雲朵中',
+                stageCloud: '☁️ 漫步雲端衝向月球',
+                stageMoon: '🌕 飛越月球邁向太陽',
+                stageSun: '☀️ 太陽神花傳奇達成！',
+                goalCloud: (diff) => `距離 ☁️雲朵 還差 ${diff} cm`,
+                goalMoon: (diff) => `距離 🌕月亮 還差 ${diff} cm`,
+                goalSun: (diff) => `距離 ☀️太陽 還差 ${diff} cm`,
+                goalDone: '🏆 已突破 1,000,000 cm 太陽頂峰！',
+                bannerCloud: '☁️ 太棒了！花莖突破 1,000 cm 穿過雲朵層！',
+                bannerMoon: '🌕 驚人高度！突破 50,000 cm 抵達月球星空層！',
+                winTitle: '太神啦！花朵碰到太陽過關了！',
+                winDesc: '成功把定緁的花養到 1,000,000 cm (1M)，穿越了雲朵與月球，完成了最偉大的太空種花挑戰！',
+                winLeavesLabel: '總共長出的葉子：',
+                winKeepBtn: '繼續無限長高 🚀',
+                winReplayBtn: '再玩一局',
+                resetModalTitle: '確定要重新種花嗎？',
+                resetModalDesc: '目前的花朵高度與升級將會歸零，從頭開始挑戰喔！',
+                resetCancelBtn: '取消',
+                resetConfirmBtn: '確定重來'
+            },
+            en: {
+                langSwitchBtn: '中文版',
+                gameTitle: "Dejun's Flower Grower",
+                designerBadge: 'Designed by Dejun',
+                subtitle: 'Goal: Grow your flower stem past the Clouds (1,000cm), Moon (50K cm), and reach the Sun (1,000,000cm)!',
+                waterLabel: 'Water Drops',
+                heightLabel: 'Height (Goal: 1M)',
+                autoRateLabel: 'Auto Grow Speed',
+                soundOn: 'Sound ON',
+                soundOff: 'Muted',
+                towerTitle: '🗼 Height Tower',
+                sunLabel: 'Sun 1M',
+                moonLabel: 'Moon 50K',
+                cloudLabel: 'Cloud 1K',
+                groundLabel: '🌱 Start 0',
+                leavesLabel: 'Leaves:',
+                multiplierLabel: 'Speed:',
+                canvasTip: '💡 Tap the flower, Spacebar, or water tank to grow!',
+                waterBtnTitle: 'WATER FLOWER',
+                waterBtnEffect: (w, g) => `💧+${w} / Grow +${g}cm`,
+                upgradeSub: 'Growth Lab',
+                upgradeCountBadge: '6 Power-Ups',
+                buyBtn: '⬆️ BUY',
+                footerNote: '🎵 Every new leaf & milestone plays a special sound!',
+                resetBtn: 'Reset Game',
+                stageGround: '🌱 Growing to Clouds',
+                stageCloud: '☁️ Above the Clouds',
+                stageMoon: '🌕 Outer Space Climber',
+                stageSun: '☀️ Sun Champion!',
+                goalCloud: (diff) => `${diff} cm to ☁️ Clouds`,
+                goalMoon: (diff) => `${diff} cm to 🌕 Moon`,
+                goalSun: (diff) => `${diff} cm to ☀️ Sun`,
+                goalDone: '🏆 1,000,000 cm Sun Goal Reached!',
+                bannerCloud: '☁️ Awesome! Your flower stem passed 1,000 cm into the Clouds!',
+                bannerMoon: '🌕 Incredible! You reached 50,000 cm — Welcome to the Moon!',
+                winTitle: 'YOU REACHED THE SUN!',
+                winDesc: "Amazing job! You grew Dejun's flower all the way to 1,000,000 cm (1M), passing the Clouds and the Moon!",
+                winLeavesLabel: 'Total Leaves Sprouted: ',
+                winKeepBtn: 'Keep Growing Forever 🚀',
+                winReplayBtn: 'Play Again',
+                resetModalTitle: 'Start a New Flower?',
+                resetModalDesc: 'Your current flower height and upgrades will be reset to zero so you can play again!',
+                resetCancelBtn: 'Cancel',
+                resetConfirmBtn: 'Reset Now'
             }
-        });
-    }
+        };
 
-    function handleWaterClick(e) {
-        let gain = clickPower * speedMultiplier * sunMultiplier;
-        height += gain;
-        drops += dropPower;
-        playAudio('water');
-
-        if (height > maxGameHeight) height = maxGameHeight;
-        updateUI();
-    }
-
-    function updateUI() {
-        document.getElementById('stat-height').innerText = `🌿 ${lang === 'zh' ? '高度' : 'Height'}: ${Math.floor(height).toLocaleString()} cm`;
-        document.getElementById('stat-drops').innerText = `💧 ${lang === 'zh' ? '水滴' : 'Drops'}: ${Math.floor(drops).toLocaleString()} 滴`;
-        document.getElementById('stat-power').innerText = `⚡ ${lang === 'zh' ? '點擊力' : 'Power'}: +${Math.floor(clickPower * speedMultiplier * sunMultiplier)} cm`;
-
-        let percent = Math.min(100, (height / maxGameHeight) * 100);
-        document.getElementById('tower-fill').style.height = percent + '%';
-        document.getElementById('tower-pointer').style.bottom = percent + '%';
-        updateUpgradesUI();
-    }
-
-    // Web Audio 簡易合成音效
-    let audioCtx = null;
-    function playAudio(type) {
-        if (!soundEnabled) return;
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        
-        let osc = audioCtx.createOscillator();
-        let gainNode = audioCtx.createGain();
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        let now = audioCtx.currentTime;
-        if (type === 'water') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(400, now);
-            osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
-            gainNode.gain.setValueAtTime(0.15, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-            osc.start(now);
-            osc.stop(now + 0.1);
-        } else if (type === 'upgrade') {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(523.25, now); // C5
-            osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
-            osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
-            gainNode.gain.setValueAtTime(0.2, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-            osc.start(now);
-            osc.stop(now + 0.3);
-        }
-    }
-
-    // Canvas 繪圖與動畫系統
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    function resizeCanvas() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    // 流星雨動畫粒子
-    let meteors = [];
-    for (let i = 0; i < 15; i++) {
-        meteors.push({
-            x: Math.random() * 800,
-            y: Math.random() * -500,
-            len: Math.random() * 80 + 40,
-            speed: Math.random() * 6 + 4
-        });
-    }
-
-    function gameLoop() {
-        // 自動澆水
-        if (autoWaterRate > 0) {
-            height += (autoWaterRate / 60) * speedMultiplier;
-            drops += (autoWaterRate / 60) * 0.5;
-            if (height > maxGameHeight) height = maxGameHeight;
+        // 切換中英文邏輯 (不影響遊戲進度)
+        function toggleLanguage() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            document.documentElement.lang = currentLang === 'zh' ? 'zh-TW' : 'en';
+            SoundFX.playLeafSprout();
+            applyStaticTranslations();
             updateUI();
+            renderUpgrades();
         }
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        let w = canvas.width;
-        let h = canvas.height;
+        function applyStaticTranslations() {
+            const t = I18N[currentLang];
+            document.getElementById('langBtnText').innerText = t.langSwitchBtn;
+            document.getElementById('uiGameTitle').innerText = t.gameTitle;
+            document.getElementById('uiDesignerBadge').innerText = t.designerBadge;
+            document.getElementById('uiSubtitle').innerText = t.subtitle;
+            document.getElementById('uiWaterLabel').innerText = t.waterLabel;
+            document.getElementById('uiHeightLabel').innerText = t.heightLabel;
+            document.getElementById('uiAutoRateLabel').innerText = t.autoRateLabel;
+            document.getElementById('soundText').innerText = SoundFX.enabled ? t.soundOn : t.soundOff;
 
-        // 根據高度決定背景顏色與世界層級
-        let isGalaxy = height >= 2000000;
-        let isSun = height >= 1000000 && !isGalaxy;
-        let isMoon = height >= 50000 && !isSun && !isGalaxy;
-        let isCloud = height >= 1000 && !isMoon && !isSun && !isGalaxy;
+            document.getElementById('uiTowerTitle').innerText = t.towerTitle;
+            document.getElementById('uiSunLabel').innerText = t.sunLabel;
+            document.getElementById('uiMoonLabel').innerText = t.moonLabel;
+            document.getElementById('uiCloudLabel').innerText = t.cloudLabel;
+            document.getElementById('uiGroundLabel').innerText = t.groundLabel;
 
-        // 1. 背景繪製
-        if (isGalaxy) {
-            let grad = ctx.createLinearGradient(0, 0, 0, h);
-            grad.addColorStop(0, '#050510');
-            grad.addColorStop(1, '#1b0033');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
+            document.getElementById('uiLeavesLabel').innerText = t.leavesLabel;
+            document.getElementById('uiMultiplierLabel').innerText = t.multiplierLabel;
+            document.getElementById('uiCanvasTip').innerText = t.canvasTip;
+            document.getElementById('uiWaterBtnTitle').innerText = t.waterBtnTitle;
 
-            // 銀河星雲與流星雨
-            ctx.fillStyle = '#fff';
-            for (let i = 0; i < 60; i++) {
-                let px = (i * 37) % w;
-                let py = (i * 59) % h;
-                ctx.fillRect(px, py, 2, 2);
-            }
+            document.getElementById('uiUpgradeSub').innerText = t.upgradeSub;
+            document.getElementById('uiUpgradeCountBadge').innerText = t.upgradeCountBadge;
+            document.getElementById('uiFooterNote').innerText = t.footerNote;
+            document.getElementById('uiResetBtn').innerText = t.resetBtn;
 
-            // 流星雨劃過
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.lineWidth = 2;
-            meteors.forEach(m => {
-                ctx.beginPath();
-                ctx.moveTo(m.x, m.y);
-                ctx.lineTo(m.x - m.len, m.y + m.len);
-                ctx.stroke();
-                m.x += m.speed * 1.5;
-                m.y += m.speed * 1.5;
-                if (m.x > w + 100 || m.y > h + 100) {
-                    m.x = Math.random() * w;
-                    m.y = -100;
+            document.getElementById('uiWinTitle').innerText = t.winTitle;
+            document.getElementById('uiWinDesc').innerText = t.winDesc;
+            document.getElementById('uiWinLeavesLabel').innerText = t.winLeavesLabel;
+            document.getElementById('uiWinKeepBtn').innerText = t.winKeepBtn;
+            document.getElementById('uiWinReplayBtn').innerText = t.winReplayBtn;
+
+            document.getElementById('uiResetModalTitle').innerText = t.resetModalTitle;
+            document.getElementById('uiResetModalDesc').innerText = t.resetModalDesc;
+            document.getElementById('uiResetCancelBtn').innerText = t.resetCancelBtn;
+            document.getElementById('uiResetConfirmBtn').innerText = t.resetConfirmBtn;
+        }
+
+        // ==========================================
+        // 2. Web Audio API 合成音效系統 (免外部音檔)
+        // ==========================================
+        const SoundFX = {
+            ctx: null,
+            enabled: true,
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
                 }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            // 澆水聲：水滴「啵！」音效
+            playWater() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(780, now + 0.09);
+
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            },
+
+            // 長出新葉子 / 切換語言音效
+            playLeafSprout() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.06); // E5
+
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.16);
+            },
+
+            // 購買升級音效：清脆叮咚
+            playUpgrade() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const notes = [587.33, 880, 1174.66]; // D5, A5, D6
+                notes.forEach((freq, idx) => {
+                    const now = this.ctx.currentTime + idx * 0.065;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.18);
+                });
+            },
+
+            // 突破雲朵 / 月亮 / 太陽里程碑號角音效
+            playMilestone(isSun = false) {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const melody = isSun
+                    ? [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50]
+                    : [440, 554.37, 659.25, 880];
+
+                melody.forEach((freq, idx) => {
+                    const now = this.ctx.currentTime + idx * 0.11;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.28);
+                });
+            }
+        };
+
+        function toggleSound() {
+            SoundFX.enabled = !SoundFX.enabled;
+            const t = I18N[currentLang];
+            document.getElementById('soundIcon').innerText = SoundFX.enabled ? '🔊' : '🔇';
+            document.getElementById('soundText').innerText = SoundFX.enabled ? t.soundOn : t.soundOff;
+            if (SoundFX.enabled) SoundFX.playUpgrade();
+        }
+
+        // ==========================================
+        // 3. 遊戲核心狀態與三段式高度目標
+        // ==========================================
+        const MILESTONES = {
+            CLOUD: 1000,      // 雲朵高度：1,000 cm
+            MOON: 50000,      // 月亮高度：50,000 cm
+            SUN: 1000000      // 太陽高度：1,000,000 cm (1M)
+        };
+
+        function getInitialState() {
+            return {
+                water: 15,
+                height: 10,
+                leafCount: 2,
+                reachedCloud: false,
+                reachedMoon: false,
+                reachedSun: false,
+
+                // 6 個升級項目 (內含中英雙語標題與描述，對應定緁手繪稿)
+                upgrades: [
+                    {
+                        id: 'up1_grow1',
+                        title: { zh: '花長大速度 (+1)', en: 'Grow Speed +1' },
+                        handDrawnTag: { zh: '花朵 ⬆️+1 | 💧10', en: 'Flower ⬆️+1 | 💧10' },
+                        desc: {
+                            zh: '每次澆水讓花莖多長高 +1.5 cm，水滴獲得 +1',
+                            en: 'Each watering grows the stem +1.5 cm taller & gives +1 Water Drop.'
+                        },
+                        level: 0,
+                        baseCost: 10,
+                        costMult: 1.45,
+                        icon: '🌱'
+                    },
+                    {
+                        id: 'up2_grow5',
+                        title: { zh: '超級長高肥料 (+5)', en: 'Super Sprout +5' },
+                        handDrawnTag: { zh: '花朵 ⬆️+5 | 💧35', en: 'Flower ⬆️+5 | 💧35' },
+                        desc: {
+                            zh: '花莖吸收養分！每次澆水額外長高 +8 cm，水滴 +4',
+                            en: 'Rich nutrients! Each click adds +8 cm stem height & +4 Water Drops.'
+                        },
+                        level: 0,
+                        baseCost: 35,
+                        costMult: 1.55,
+                        icon: '🌿'
+                    },
+                    {
+                        id: 'up3_water15',
+                        title: { zh: '水滴加倍噴頭 (+15)', en: 'Water Boost +15 Drops' },
+                        handDrawnTag: { zh: '加15水 ⬆️+15 | 💧75', en: 'Boost ⬆️+15 | 💧75' },
+                        desc: {
+                            zh: '強化水管噴頭！每次點擊水滴 +20，且每秒自動長高 +25 cm',
+                            en: 'Power hose nozzle! +20 Water Drops per tap & +25 cm/s auto growth.'
+                        },
+                        level: 0,
+                        baseCost: 75,
+                        costMult: 1.6,
+                        icon: '🚿'
+                    },
+                    {
+                        id: 'up4_mult2',
+                        title: { zh: '遊戲速度加快 (x1.5倍)', en: 'Game Speed x2 Boost' },
+                        handDrawnTag: { zh: '加速 ⬆️x2 | 💧95', en: 'Speed ⬆️x2 | 💧95' },
+                        desc: {
+                            zh: '定緁說「花就可以很快」！所有手動與自動長高速度乘以 1.5 倍',
+                            en: 'Supercharges all manual & auto flower growth speed by 1.5x per level!'
+                        },
+                        level: 0,
+                        baseCost: 95,
+                        costMult: 2.1,
+                        icon: '🚀'
+                    },
+                    {
+                        id: 'up5_gamespeed',
+                        title: { zh: '自動澆水機 (+150/秒)', en: 'Auto Waterer +150/sec' },
+                        handDrawnTag: { zh: '150+ 💧水桶 | 💧250', en: '150+ 💧Tank | 💧250' },
+                        desc: {
+                            zh: '自動噴水系統全開！每秒自動獲得 +180 水滴並長高 +450 cm',
+                            en: 'Automatic water pump! Generates +180 Drops/s & grows +450 cm/s.'
+                        },
+                        level: 0,
+                        baseCost: 250,
+                        costMult: 1.75,
+                        icon: '⚡'
+                    },
+                    {
+                        id: 'up6_sunpower',
+                        title: { zh: '太陽神肥料 (衝向1M)', en: 'Mega Sun Fertilizer (To 1M)' },
+                        handDrawnTag: { zh: '太陽神水 ☀️ | 💧10K', en: 'Sun Power ☀️ | 💧10K' },
+                        desc: {
+                            zh: '直衝太陽的終極能量！每秒自動狂飆長高 +15,000 cm 與 +2,000 水滴',
+                            en: 'Ultimate cosmic energy! Auto-grows +15,000 cm/s & +2,000 Drops/s toward 1M!'
+                        },
+                        level: 0,
+                        baseCost: 10000,
+                        costMult: 1.85,
+                        icon: '☀️'
+                    }
+                ]
+            };
+        }
+
+        let gameState = getInitialState();
+
+        function getStats() {
+            const u = gameState.upgrades;
+            const lv1 = u[0].level;
+            const lv2 = u[1].level;
+            const lv3 = u[2].level;
+            const lv4 = u[3].level;
+            const lv5 = u[4].level;
+            const lv6 = u[5].level;
+
+            const totalMult = Math.pow(1.5, lv4);
+            const waterPerClick = Math.floor((1 + lv1 * 1 + lv2 * 4 + lv3 * 20 + lv5 * 50) * totalMult);
+            const growPerClick = (1 + lv1 * 1.5 + lv2 * 8 + lv3 * 18) * totalMult;
+            const autoWaterPerSec = (lv1 * 0.5 + lv2 * 2 + lv3 * 12 + lv5 * 180 + lv6 * 2000) * totalMult;
+            const autoGrowPerSec = (lv1 * 0.5 + lv2 * 3 + lv3 * 25 + lv5 * 450 + lv6 * 15000) * totalMult;
+
+            return {
+                totalMult,
+                waterPerClick,
+                growPerClick,
+                autoWaterPerSec,
+                autoGrowPerSec
+            };
+        }
+
+        function calcTargetLeaves(heightCm) {
+            if (heightCm <= 15) return 2;
+            const linearPart = Math.floor(heightCm / 35);
+            const logPart = Math.floor(Math.pow(Math.log10(Math.max(10, heightCm)), 2.6) * 3);
+            return Math.max(2, Math.min(999, Math.min(linearPart + 2, logPart)));
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(2) + 'M';
+            }
+            if (num >= 1000) {
+                return Math.floor(num).toLocaleString('en-US');
+            }
+            return Number.isInteger(num) ? num.toString() : num.toFixed(1);
+        }
+
+        // ==========================================
+        // 4. 升級選單渲染與介面更新
+        // ==========================================
+        function getUpgradeCost(up) {
+            return Math.floor(up.baseCost * Math.pow(up.costMult, up.level));
+        }
+
+        function renderUpgrades() {
+            const container = document.getElementById('upgradeList');
+            container.innerHTML = '';
+            const t = I18N[currentLang];
+
+            gameState.upgrades.forEach((up, index) => {
+                const cost = getUpgradeCost(up);
+                const canAfford = gameState.water >= cost;
+
+                const card = document.createElement('div');
+                card.className = `flex items-center justify-between p-2.5 sm:p-3 rounded-2xl border-2 transition-all gap-2 ${
+                    canAfford
+                        ? 'bg-white border-slate-800 shadow-sm'
+                        : 'bg-slate-100/80 border-slate-300 opacity-85'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-amber-100 border-2 border-slate-700 flex flex-col items-center justify-center flex-shrink-0">
+                            <span class="text-xl sm:text-2xl leading-none">${up.icon}</span>
+                            <span class="text-[10px] font-black text-slate-700 mt-0.5">Lv.${up.level}</span>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <h4 class="font-black text-slate-800 text-xs sm:text-sm truncate">${up.title[currentLang]}</h4>
+                                <span class="text-[10px] font-bold bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded border border-amber-300">${up.handDrawnTag[currentLang]}</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 font-bold leading-snug mt-0.5">${up.desc[currentLang]}</p>
+                        </div>
+                    </div>
+                    <button onclick="buyUpgrade(${index})" ${canAfford ? '' : 'disabled'}
+                        class="sketch-btn px-3 py-2 rounded-xl font-black text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                            canAfford
+                                ? 'bg-gradient-to-b from-emerald-400 to-emerald-500 hover:from-emerald-300 hover:to-emerald-400 text-slate-900 cursor-pointer'
+                                : 'bg-slate-200 text-slate-400 border-slate-400 cursor-not-allowed shadow-none'
+                        }">
+                        <div>${t.buyBtn}</div>
+                        <div class="text-[11px] font-extrabold ${canAfford ? 'text-emerald-950' : 'text-slate-400'}">💧 ${formatNumber(cost)}</div>
+                    </button>
+                `;
+                container.appendChild(card);
             });
-
-            // 銀河標題
-            ctx.fillStyle = '#f9ed69';
-            ctx.font = 'bold 20px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(lang === 'zh' ? '🌌 隱藏結局：銀河系流星雨 (2,000,000 cm)' : '🌌 Hidden Ending: Galaxy Meteor Shower', w / 2, 50);
-
-        } else if (isSun) {
-            ctx.fillStyle = '#ff7b00';
-            ctx.fillRect(0, 0, w, h);
-            // 太陽
-            ctx.fillStyle = '#ffea00';
-            ctx.beginPath();
-            ctx.arc(w / 2, 100, 70, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (isMoon) {
-            let grad = ctx.createLinearGradient(0, 0, 0, h);
-            grad.addColorStop(0, '#0b132b');
-            grad.addColorStop(1, '#1c2541');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
-            // 月亮與隕石坑
-            ctx.fillStyle = '#e0e0e0';
-            ctx.beginPath();
-            ctx.arc(w - 90, 90, 45, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#b0b0b0';
-            ctx.beginPath();
-            ctx.arc(w - 105, 80, 10, 0, Math.PI * 2);
-            ctx.arc(w - 75, 110, 7, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (isCloud) {
-            let grad = ctx.createLinearGradient(0, 0, 0, h);
-            grad.addColorStop(0, '#4a90e2');
-            grad.addColorStop(1, '#c5e3f6');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
-            // 雲朵
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.beginPath();
-            ctx.arc(120, 150, 35, 0, Math.PI * 2);
-            ctx.arc(155, 140, 45, 0, Math.PI * 2);
-            ctx.arc(190, 150, 30, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            let grad = ctx.createLinearGradient(0, 0, 0, h);
-            grad.addColorStop(0, '#87CEEB');
-            grad.addColorStop(1, '#E0F6FF');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
-            // 地面草地
-            ctx.fillStyle = '#2e7d32';
-            ctx.fillRect(0, h - 40, w, 40);
         }
 
-        // 2. 繪製花盆與花朵（動態花莖生長系統）
-        let potX = w / 2;
-        let potY = h - 50;
+        function buyUpgrade(index) {
+            const up = gameState.upgrades[index];
+            const cost = getUpgradeCost(up);
 
-        // 花盆
-        ctx.fillStyle = '#b5651d';
-        ctx.beginPath();
-        ctx.moveTo(potX - 30, potY);
-        ctx.lineTo(potX + 30, potY);
-        ctx.lineTo(potX + 22, potY + 45);
-        ctx.lineTo(potX - 22, potY + 45);
-        ctx.closePath();
-        ctx.fill();
-
-        // 花莖高度計算（視覺化拉長，最高延伸到畫面頂部）
-        let stemMaxVisualHeight = h - 160;
-        let progressRatio = Math.min(1, height / maxGameHeight);
-        let currentStemHeight = progressRatio * stemMaxVisualHeight;
-
-        // 繪製綠色花莖
-        ctx.strokeStyle = '#4ecca3';
-        ctx.lineWidth = 6;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(potX, potY);
-        ctx.lineTo(potX, potY - currentStemHeight);
-        ctx.stroke();
-
-        // 沿著花莖每隔一段距離長出綠葉
-        let leafCount = Math.floor(currentStemHeight / 40);
-        for (let i = 1; i <= leafCount; i++) {
-            let leafY = potY - (i * 40);
-            let dir = (i % 2 === 0) ? 1 : -1;
-            ctx.fillStyle = '#26a69a';
-            ctx.beginPath();
-            ctx.ellipse(potX + (dir * 18), leafY, 15, 7, dir * 0.4, 0, Math.PI * 2);
-            ctx.fill();
+            if (gameState.water >= cost) {
+                gameState.water -= cost;
+                up.level += 1;
+                SoundFX.playUpgrade();
+                flowerBounceVelocity = 1.25;
+                updateUI();
+                renderUpgrades();
+            }
         }
 
-        // 花朵本體（長在花莖最頂端）
-        let flowerTopY = potY - currentStemHeight;
-        
-        // 花瓣
-        ctx.fillStyle = isGalaxy ? '#f9ed69' : (isSun ? '#ff5722' : '#ffeb3b');
-        for (let i = 0; i < 8; i++) {
-            let angle = (i * Math.PI / 4);
-            let fx = potX + Math.cos(angle) * 22;
-            let fy = flowerTopY + Math.sin(angle) * 22;
-            ctx.beginPath();
-            ctx.arc(fx, fy, 12, 0, Math.PI * 2);
-            ctx.fill();
+        function calcTowerProgressPercent(h) {
+            if (h <= MILESTONES.CLOUD) {
+                return Math.min(33.33, (h / MILESTONES.CLOUD) * 33.33);
+            } else if (h <= MILESTONES.MOON) {
+                const ratio = (h - MILESTONES.CLOUD) / (MILESTONES.MOON - MILESTONES.CLOUD);
+                return 33.33 + ratio * 33.33;
+            } else {
+                const ratio = Math.min(1, (h - MILESTONES.MOON) / (MILESTONES.SUN - MILESTONES.MOON));
+                return 66.66 + ratio * 33.34;
+            }
         }
-        // 花心
-        ctx.fillStyle = '#8d6e63';
-        ctx.beginPath();
-        ctx.arc(potX, flowerTopY, 14, 0, Math.PI * 2);
-        ctx.fill();
 
-        // 澆水桶小圖示裝飾
-        ctx.fillStyle = '#90caf9';
-        ctx.fillRect(potX + 60, potY + 10, 25, 18);
-        ctx.fillRect(potX + 85, potY + 14, 8, 10);
+        function updateUI() {
+            const stats = getStats();
+            const t = I18N[currentLang];
 
-        requestAnimationFrame(gameLoop);
-    }
+            document.getElementById('waterCount').innerText = formatNumber(Math.floor(gameState.water));
+            document.getElementById('flowerHeightDisplay').innerText = formatNumber(gameState.height) + ' cm';
+            document.getElementById('autoRateDisplay').innerText = '+' + formatNumber(stats.autoGrowPerSec) + ' cm/s';
 
-    // 初始化啟動
-    initUpgrades();
-    updateUI();
-    requestAnimationFrame(gameLoop);
-</script>
+            document.getElementById('uiWaterBtnEffect').innerText = t.waterBtnEffect(
+                formatNumber(stats.waterPerClick),
+                formatNumber(stats.growPerClick)
+            );
+
+            document.getElementById('leafCountText').innerText = gameState.leafCount;
+            document.getElementById('multiplierText').innerText = 'x' + stats.totalMult.toFixed(1);
+
+            const pct = Math.max(2, Math.min(100, calcTowerProgressPercent(gameState.height)));
+            document.getElementById('towerProgressFill').style.height = pct + '%';
+            document.getElementById('towerPointer').style.bottom = pct + '%';
+
+            const badge = document.getElementById('stageBadge');
+            const nextGoal = document.getElementById('nextGoalText');
+
+            if (gameState.height < MILESTONES.CLOUD) {
+                badge.innerText = t.stageGround;
+                badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-400';
+                nextGoal.innerText = t.goalCloud(formatNumber(MILESTONES.CLOUD - gameState.height));
+            } else if (gameState.height < MILESTONES.MOON) {
+                badge.innerText = t.stageCloud;
+                badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-400';
+                nextGoal.innerText = t.goalMoon(formatNumber(MILESTONES.MOON - gameState.height));
+            } else if (gameState.height < MILESTONES.SUN) {
+                badge.innerText = t.stageMoon;
+                badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-400';
+                nextGoal.innerText = t.goalSun(formatNumber(MILESTONES.SUN - gameState.height));
+            } else {
+                badge.innerText = t.stageSun;
+                badge.className = 'text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 border border-amber-500';
+                nextGoal.innerText = t.goalDone;
+            }
+        }
+
+        // ==========================================
+        // 5. 澆水互動與花莖成長判定
+        // ==========================================
+        let waterDroplets = [];
+        let celebrationConfetti = [];
+        let flowerBounceScale = 1.0;
+        let flowerBounceVelocity = 0;
+
+        function manualWater(event) {
+            const stats = getStats();
+            gameState.water += stats.waterPerClick;
+            addFlowerHeight(stats.growPerClick);
+
+            SoundFX.playWater();
+            flowerBounceVelocity = 0.35;
+            spawnWaterDroplets(8);
+
+            let clientX = window.innerWidth * 0.45;
+            let clientY = window.innerHeight * 0.55;
+            if (event && event.clientX) {
+                clientX = event.clientX;
+                clientY = event.clientY;
+            }
+            spawnFloatingText(
+                clientX,
+                clientY,
+                `💧+${formatNumber(stats.waterPerClick)}  🌱+${formatNumber(stats.growPerClick)}cm`
+            );
+
+            updateUI();
+            renderUpgrades();
+        }
+
+        function handleCanvasWaterClick(event) {
+            manualWater(event);
+        }
+
+        // 支援鍵盤空白鍵澆水
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && e.target === document.body) {
+                e.preventDefault();
+                manualWater(null);
+            }
+        });
+
+        function addFlowerHeight(amount) {
+            gameState.height += amount;
+            const t = I18N[currentLang];
+
+            const newLeafTarget = calcTargetLeaves(gameState.height);
+            if (newLeafTarget > gameState.leafCount) {
+                gameState.leafCount = newLeafTarget;
+                SoundFX.playLeafSprout();
+            }
+
+            if (!gameState.reachedCloud && gameState.height >= MILESTONES.CLOUD) {
+                gameState.reachedCloud = true;
+                SoundFX.playMilestone(false);
+                showMilestoneBanner(t.bannerCloud);
+            }
+            if (!gameState.reachedMoon && gameState.height >= MILESTONES.MOON) {
+                gameState.reachedMoon = true;
+                SoundFX.playMilestone(false);
+                showMilestoneBanner(t.bannerMoon);
+            }
+            if (!gameState.reachedSun && gameState.height >= MILESTONES.SUN) {
+                gameState.reachedSun = true;
+                SoundFX.playMilestone(true);
+                spawnConfetti(80);
+                document.getElementById('winLeafCount').innerText = gameState.leafCount;
+                document.getElementById('winModal').classList.remove('hidden');
+                document.getElementById('winModal').classList.add('flex');
+            }
+        }
+
+        function spawnFloatingText(clientX, clientY, text) {
+            const el = document.createElement('div');
+            el.className = 'floating-text font-black text-xs sm:text-sm bg-white/90 text-emerald-700 px-2.5 py-1 rounded-full border-2 border-emerald-500 shadow';
+            el.style.left = Math.max(20, clientX - 45) + 'px';
+            el.style.top = Math.max(20, clientY - 25) + 'px';
+            el.innerText = text;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 900);
+        }
+
+        function showMilestoneBanner(msg) {
+            const banner = document.createElement('div');
+            banner.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-amber-300 text-slate-900 px-5 py-3 rounded-2xl font-black text-sm sm:text-base sketch-panel z-50 transition-all text-center';
+            banner.innerText = msg;
+            document.body.appendChild(banner);
+            setTimeout(() => {
+                banner.style.opacity = '0';
+                setTimeout(() => banner.remove(), 400);
+            }, 3400);
+        }
+
+        // ==========================================
+        // 6. 動態 Canvas 花莖無限伸長、盆栽與天體背景引擎
+        // ==========================================
+        const canvas = document.getElementById('flowerCanvas');
+        const ctx = canvas.getContext('2d');
+        let animTime = 0;
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvasContainer');
+            if (!container) return;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function spawnWaterDroplets(count) {
+            const w = canvas.width;
+            const h = canvas.height;
+            for (let i = 0; i < count; i++) {
+                waterDroplets.push({
+                    x: w * 0.78 + (Math.random() - 0.5) * 20,
+                    y: h * 0.76 + (Math.random() - 0.5) * 15,
+                    vx: -(w * 0.008 + Math.random() * 3.5),
+                    vy: -(6 + Math.random() * 5),
+                    size: 5 + Math.random() * 4,
+                    alpha: 1
+                });
+            }
+        }
+
+        function spawnConfetti(count) {
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#fde047'];
+            for (let i = 0; i < count; i++) {
+                celebrationConfetti.push({
+                    x: Math.random() * canvas.width,
+                    y: -20 - Math.random() * 150,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: 2 + Math.random() * 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: 6 + Math.random() * 6,
+                    rot: Math.random() * Math.PI
+                });
+            }
+        }
+
+        function drawLeaf(x, y, side, scale, swayAngle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(side * (0.45 + swayAngle));
+            ctx.scale(side * scale, scale);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(18, -18, 42, -14, 52, 0);
+            ctx.bezierCurveTo(42, 16, 18, 18, 0, 0);
+            ctx.fillStyle = '#22c55e';
+            ctx.fill();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#14532d';
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(4, 0);
+            ctx.quadraticCurveTo(25, -2, 44, 0);
+            ctx.strokeStyle = '#86efac';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawFlowerHead(x, y, radius, sway) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(sway * 0.4);
+            ctx.scale(flowerBounceScale, flowerBounceScale);
+
+            const petalCount = 12;
+            const petalColors = gameState.height >= MILESTONES.SUN
+                ? ['#fde047', '#f59e0b']
+                : ['#facc15', '#eab308'];
+
+            for (let i = 0; i < petalCount; i++) {
+                ctx.save();
+                ctx.rotate((Math.PI * 2 * i) / petalCount + animTime * 0.15);
+                ctx.beginPath();
+                ctx.ellipse(radius * 0.85, 0, radius * 0.55, radius * 0.28, 0, 0, Math.PI * 2);
+                ctx.fillStyle = i % 2 === 0 ? petalColors[0] : petalColors[1];
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#422006';
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.62, 0, Math.PI * 2);
+            ctx.fillStyle = '#fef08a';
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#422006';
+            ctx.stroke();
+
+            const eyeOffsetX = radius * 0.22;
+            const eyeOffsetY = -radius * 0.1;
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.arc(-eyeOffsetX, eyeOffsetY, radius * 0.09, 0, Math.PI * 2);
+            ctx.arc(eyeOffsetX, eyeOffsetY, radius * 0.09, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#fb7185';
+            ctx.beginPath();
+            ctx.ellipse(-eyeOffsetX * 1.35, eyeOffsetY + radius * 0.16, radius * 0.11, radius * 0.06, 0, 0, Math.PI * 2);
+            ctx.ellipse(eyeOffsetX * 1.35, eyeOffsetY + radius * 0.16, radius * 0.11, radius * 0.06, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(0, radius * 0.05, radius * 0.24, 0.15 * Math.PI, 0.85 * Math.PI);
+            ctx.lineWidth = 2.8;
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function renderScene() {
+            const w = canvas.width;
+            const h = canvas.height;
+            if (w === 0 || h === 0) return;
+
+            animTime += 0.035;
+
+            if (Math.abs(flowerBounceScale - 1.0) > 0.001 || Math.abs(flowerBounceVelocity) > 0.001) {
+                flowerBounceScale += (1.0 - flowerBounceScale) * 0.18 + flowerBounceVelocity * 0.1;
+                flowerBounceVelocity *= 0.82;
+            } else {
+                flowerBounceScale = 1.0;
+            }
+
+            let visualStemPixels;
+            if (gameState.height <= 80) {
+                visualStemPixels = 35 + (gameState.height - 10) * 3.2;
+            } else {
+                visualStemPixels = 259 + Math.log10(gameState.height / 80) * 950;
+            }
+
+            const baseGroundY = h - 65;
+            const maxFlowerScreenY = h * 0.34;
+            const idealFlowerY = baseGroundY - visualStemPixels;
+            const cameraOffsetY = idealFlowerY < maxFlowerScreenY ? (maxFlowerScreenY - idealFlowerY) : 0;
+
+            const groundScreenY = baseGroundY + cameraOffsetY;
+            const flowerHeadScreenY = groundScreenY - visualStemPixels;
+
+            // 1. 動態天空漸層
+            const towerPct = calcTowerProgressPercent(gameState.height);
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+            if (towerPct < 33.3) {
+                skyGrad.addColorStop(0, '#7dd3fc');
+                skyGrad.addColorStop(1, '#e0f2fe');
+            } else if (towerPct < 66.6) {
+                skyGrad.addColorStop(0, '#1e1b4b');
+                skyGrad.addColorStop(0.6, '#3b82f6');
+                skyGrad.addColorStop(1, '#bae6fd');
+            } else {
+                skyGrad.addColorStop(0, '#f59e0b');
+                skyGrad.addColorStop(0.45, '#7c2d12');
+                skyGrad.addColorStop(1, '#1e1b4b');
+            }
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // 2. 背景高度尺、雲朵、星星、隕石坑月球與金色太陽
+            ctx.save();
+            const rulerStepPx = 80;
+            const startStep = Math.floor(cameraOffsetY / rulerStepPx);
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+
+            for (let i = startStep - 2; i < startStep + 10; i++) {
+                const lineY = baseGroundY - i * rulerStepPx + cameraOffsetY;
+                if (lineY > 0 && lineY < h) {
+                    ctx.beginPath();
+                    ctx.moveTo(12, lineY);
+                    ctx.lineTo(28, lineY);
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    if (i > 0 && i % 2 === 0) {
+                        const cloudX = ((i * 137) % (w - 120)) + 50 + Math.sin(animTime * 0.5 + i) * 12;
+                        if (towerPct >= 40) {
+                            ctx.fillStyle = 'rgba(254, 240, 138, 0.85)';
+                            ctx.beginPath();
+                            ctx.arc(cloudX, lineY, 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else {
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+                            ctx.beginPath();
+                            ctx.arc(cloudX, lineY, 18, 0, Math.PI * 2);
+                            ctx.arc(cloudX + 15, lineY + 4, 14, 0, Math.PI * 2);
+                            ctx.arc(cloudX - 15, lineY + 5, 13, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+
+            // 接近月球層時繪製手繪風隕石坑月球
+            if (towerPct >= 30 && towerPct <= 85) {
+                const moonX = w * 0.78;
+                const moonY = h * 0.22;
+                ctx.beginPath();
+                ctx.arc(moonX, moonY, 30, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(254, 240, 138, 0.9)';
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#64748b';
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(234, 179, 8, 0.65)';
+                [[-10, -8, 5], [8, -4, 6], [-4, 10, 4.5], [10, 11, 3.5]].forEach(([dx, dy, r]) => {
+                    ctx.beginPath();
+                    ctx.arc(moonX + dx, moonY + dy, r, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            // 接近太陽層時繪製金色太陽
+            if (towerPct > 65) {
+                const sunX = w * 0.22;
+                const sunY = h * 0.2;
+                ctx.beginPath();
+                ctx.arc(sunX, sunY, 36 + Math.sin(animTime * 2) * 3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(253, 224, 71, 0.92)';
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#ca8a04';
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 3. 繪製底部草地與陶土花盆
+            if (groundScreenY < h + 120) {
+                ctx.fillStyle = '#4ade80';
+                ctx.beginPath();
+                ctx.ellipse(w * 0.5, groundScreenY + 35, w * 0.7, 55, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#166534';
+                ctx.stroke();
+
+                const potCenterX = w * 0.45;
+                ctx.fillStyle = '#d97706';
+                ctx.strokeStyle = '#451a03';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(potCenterX - 32, groundScreenY - 18);
+                ctx.lineTo(potCenterX + 32, groundScreenY - 18);
+                ctx.lineTo(potCenterX + 24, groundScreenY + 18);
+                ctx.lineTo(potCenterX - 24, groundScreenY + 18);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(potCenterX - 36, groundScreenY - 26, 72, 10);
+                ctx.strokeRect(potCenterX - 36, groundScreenY - 26, 72, 10);
+
+                ctx.fillStyle = '#78350f';
+                ctx.beginPath();
+                ctx.ellipse(potCenterX, groundScreenY - 26, 32, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // 4. 繪製無限向上抽長的綠色花莖與葉片
+            const centerX = w * 0.45;
+            const stemRootY = groundScreenY - 26;
+            const visibleBottomY = Math.min(h + 30, stemRootY);
+            const stemSegments = 36;
+            const segmentHeight = (visibleBottomY - flowerHeadScreenY) / stemSegments;
+
+            const leafIntervalPx = 52;
+            const totalVirtualLeaves = Math.min(gameState.leafCount, Math.floor(visualStemPixels / leafIntervalPx) + 2);
+            const firstVisibleLeafIdx = Math.max(1, Math.floor((visualStemPixels - (h - flowerHeadScreenY)) / leafIntervalPx));
+
+            for (let idx = firstVisibleLeafIdx; idx <= totalVirtualLeaves; idx++) {
+                const distFromRoot = idx * leafIntervalPx;
+                const leafY = stemRootY - distFromRoot;
+                if (leafY > flowerHeadScreenY + 18 && leafY < h + 25) {
+                    const waveOffset = Math.sin(distFromRoot * 0.025 - animTime * 2) * 10;
+                    const leafX = centerX + waveOffset;
+                    const side = idx % 2 === 0 ? 1 : -1;
+                    const sway = Math.sin(animTime * 2.2 + idx) * 0.08;
+                    drawLeaf(leafX, leafY, side, 0.85, sway);
+                }
+            }
+
+            ctx.save();
+            ctx.beginPath();
+            for (let i = 0; i <= stemSegments; i++) {
+                const currY = visibleBottomY - i * segmentHeight;
+                const distFromRoot = stemRootY - currY;
+                const rootDamping = Math.min(1, Math.max(0, distFromRoot / 120));
+                const waveX = centerX + Math.sin(distFromRoot * 0.025 - animTime * 2) * 10 * rootDamping;
+                if (i === 0) {
+                    ctx.moveTo(waveX, currY);
+                } else {
+                    ctx.lineTo(waveX, currY);
+                }
+            }
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 16;
+            ctx.strokeStyle = '#14532d';
+            ctx.stroke();
+
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = '#22c55e';
+            ctx.stroke();
+
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#86efac';
+            ctx.stroke();
+            ctx.restore();
+
+            // 5. 繪製頂端向日葵花頭
+            const topDist = visualStemPixels;
+            const topDamping = Math.min(1, Math.max(0, topDist / 120));
+            const headX = centerX + Math.sin(topDist * 0.025 - animTime * 2) * 10 * topDamping;
+            const headSway = Math.cos(animTime * 2) * 0.15;
+            const baseRadius = Math.min(44, 26 + Math.log10(Math.max(10, gameState.height)) * 3.5);
+            drawFlowerHead(headX, flowerHeadScreenY, baseRadius, headSway);
+
+            // 6. 水滴粒子
+            for (let i = waterDroplets.length - 1; i >= 0; i--) {
+                const p = waterDroplets[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.38;
+                p.alpha -= 0.022;
+
+                if (p.alpha <= 0) {
+                    waterDroplets.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.fillStyle = '#38bdf8';
+                ctx.strokeStyle = '#0284c7';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 7. 過關慶祝彩帶
+            for (let i = celebrationConfetti.length - 1; i >= 0; i--) {
+                const c = celebrationConfetti[i];
+                c.x += c.vx;
+                c.y += c.vy;
+                c.rot += 0.08;
+                if (c.y > h + 20) {
+                    celebrationConfetti.splice(i, 1);
+                    continue;
+                }
+                ctx.save();
+                ctx.translate(c.x, c.y);
+                ctx.rotate(c.rot);
+                ctx.fillStyle = c.color;
+                ctx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size * 0.6);
+                ctx.restore();
+            }
+
+            requestAnimationFrame(renderScene);
+        }
+
+        // ==========================================
+        // 7. 自動成長計時器與視窗控制
+        // ==========================================
+        let autoWaterVisualTimer = 0;
+
+        setInterval(() => {
+            const stats = getStats();
+            const dt = 0.2;
+
+            if (stats.autoWaterPerSec > 0) {
+                gameState.water += stats.autoWaterPerSec * dt;
+            }
+            if (stats.autoGrowPerSec > 0) {
+                addFlowerHeight(stats.autoGrowPerSec * dt);
+                autoWaterVisualTimer += dt;
+                if (autoWaterVisualTimer >= 0.45) {
+                    autoWaterVisualTimer = 0;
+                    spawnWaterDroplets(2);
+                }
+            }
+
+            updateUI();
+            renderUpgrades();
+        }, 200);
+
+        function closeWinModal() {
+            document.getElementById('winModal').classList.add('hidden');
+            document.getElementById('winModal').classList.remove('flex');
+        }
+
+        function resetGamePrompt() {
+            document.getElementById('resetModal').classList.remove('hidden');
+            document.getElementById('resetModal').classList.add('flex');
+        }
+
+        function closeResetModal() {
+            document.getElementById('resetModal').classList.add('hidden');
+            document.getElementById('resetModal').classList.remove('flex');
+        }
+
+        function confirmResetGame() {
+            gameState = getInitialState();
+            closeResetModal();
+            closeWinModal();
+            updateUI();
+            renderUpgrades();
+        }
+
+        window.onload = function () {
+            resizeCanvas();
+            applyStaticTranslations();
+            renderUpgrades();
+            updateUI();
+            requestAnimationFrame(renderScene);
+        };
+    </script>
 </body>
 </html>

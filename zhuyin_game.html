@@ -24,12 +24,11 @@
             justify-content: space-between;
             width: 100vw;
             height: 100vh;
-            height: 100dvh; /* 動態扣除手機與 iPad 瀏覽器工具列高度 */
+            height: 100dvh;
             overflow: hidden;
             touch-action: none;
         }
 
-        /* 頂部資訊列：自動緊湊排列 */
         .header-area {
             width: 100%;
             max-width: 900px;
@@ -79,12 +78,11 @@
             white-space: nowrap;
         }
 
-        /* 遊戲畫布外框：自動計算剩餘空間，保持 16:9 比例不變形 */
         #game-wrapper {
             flex: 1;
             width: 100%;
             max-width: 960px;
-            min-height: 0; /* 關鍵：允許 Flex 子元素縮小以適應螢幕 */
+            min-height: 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -105,7 +103,6 @@
             display: block;
         }
 
-        /* 底部觸控方向鍵區：手機與 iPad 皆好按 */
         .touch-controls {
             width: 100%;
             max-width: 900px;
@@ -157,7 +154,6 @@
             line-height: 1.4;
         }
 
-        /* 解密彈窗：鎖定在畫面正中央，絕不超出螢幕 */
         #modal {
             display: none;
             position: fixed;
@@ -277,7 +273,6 @@
     </div>
 
     <div id="game-wrapper">
-        <!-- 內部邏輯維持 800x450 (16格 x 9格，每格 50px) -->
         <canvas id="gameCanvas" width="800" height="450"></canvas>
     </div>
 
@@ -311,7 +306,7 @@
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        const tileSize = 50; // 800x450 對應 16x9 格
+        const tileSize = 50;
 
         const stages = [
             {
@@ -338,7 +333,7 @@
                 ],
                 items: [
                     {symbol: "ㄍ", x: 3, y: 1}, {symbol: "ㄨ", x: 3, y: 5},
-                    {symbol: "ㄞ", x: 7, y: 2}, {symbol: "ˋ", x: 7, y: 5}, // 已修正為四聲 ˋ
+                    {symbol: "ㄞ", x: 7, y: 2}, {symbol: "ˋ", x: 7, y: 5},
                     {symbol: "ㄨ", x: 10, y: 2}, {symbol: "ˋ", x: 13, y: 5}
                 ]
             },
@@ -384,17 +379,18 @@
                 ]
             },
             {
-                type: "chest", word: "勝利", english: "Victory", icon: "🏆", pinyin: "ㄕㄥˋㄌㄧˋ", color: "#e67e22",
-                poolKeys: ["ㄕ", "ㄥ", "ˋ", "ㄌ", "ㄧ", "ㄅ", "ㄉ", "ㄖ", "ㄗ"],
+                // 第 6 關：依定緁要求改為「獎盃 (Trophy)」
+                type: "chest", word: "獎盃", english: "Trophy", icon: "🏆", pinyin: "ㄐㄧㄤˇㄅㄟ", color: "#e67e22",
+                poolKeys: ["ㄐ", "ㄧ", "ㄤ", "ˇ", "ㄅ", "ㄟ", "ㄉ", "ㄆ", "ˋ"],
                 startX: 1, startY: 1, targetX: 14, targetY: 7,
                 walls: [
                     {x:2, y:2, w:3, h:2}, {x:6, y:1, w:1, h:6}, {x:9, y:2, w:4, h:1},
                     {x:4, y:5, w:6, h:1}, {x:11, y:3, w:1, h:3}
                 ],
                 items: [
-                    {symbol: "ㄕ", x: 4, y: 3}, {symbol: "ㄥ", x: 1, y: 6},
-                    {symbol: "ˋ", x: 7, y: 3}, {symbol: "ㄌ", x: 12, y: 1},
-                    {symbol: "ㄧ", x: 9, y: 7}, {symbol: "ˋ", x: 13, y: 6}
+                    {symbol: "ㄐ", x: 4, y: 3}, {symbol: "ㄧ", x: 1, y: 6},
+                    {symbol: "ㄤ", x: 7, y: 3}, {symbol: "ˇ", x: 12, y: 1},
+                    {symbol: "ㄅ", x: 9, y: 7}, {symbol: "ㄟ", x: 13, y: 6}
                 ]
             },
             {
@@ -436,7 +432,6 @@
             document.getElementById("timer").innerText = totalSeconds;
         }, 1000);
 
-        // 綁定支援手機與 iPad 的 Pointer Events
         document.querySelectorAll('.dpad-btn').forEach(btn => {
             const dir = btn.getAttribute('data-dir');
             const startMove = (e) => {
@@ -648,7 +643,6 @@
             let targetPixelY = stage.targetY * tileSize + 10;
             let distToTarget = Math.hypot(player.x - targetPixelX, player.y - targetPixelY);
             if (distToTarget < 35) {
-                // 停止移動狀態，避免關閉彈窗後暴衝
                 touchMoves = { up: false, down: false, left: false, right: false };
                 keys = {};
                 document.querySelectorAll('.dpad-btn').forEach(b => b.classList.remove('active'));

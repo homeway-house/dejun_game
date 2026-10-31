@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>定緁的基地守夜：十日生存</title>
+<style>
+  * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; }
+  body { margin: 0; background: #12131a; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 8px; }
+  h1 { margin: 4px 0 8px 0; font-size: 19px; color: #ffd166; text-align: center; }
+  
+  /* 頂部資訊列 */
+  .hud { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #1e202b; padding: 10px 12px; border-radius: 12px; border: 2px solid #3a3f58; width: 100%; max-width: 850px; margin-bottom: 8px; }
+  .hud-box { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: bold; }
+  .clock-box { background: #0d0e12; padding: 4px 10px; border-radius: 8px; border: 1px solid #555; font-family: monospace; font-size: 17px; color: #06d6a0; justify-self: end; }
+  .power-bar-bg { flex: 1; height: 16px; background: #333; border-radius: 8px; overflow: hidden; border: 1px solid #666; }
+  .power-bar-fill { height: 100%; background: linear-gradient(90deg, #ef476f, #ffd166, #06d6a0); width: 100%; transition: width 0.2s; }
+
+  /* 基地主畫面：手機與平板皆維持三門並排，方便一眼看到三個門 */
+  .base-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 850px; background: #252836; padding: 10px; border-radius: 14px; border: 2px solid #4a506b; }
+  
+  .lane { background: #1a1c26; border-radius: 10px; padding: 8px; border: 1px solid #35394c; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+  .lane-title { font-weight: bold; color: #a8b2d1; margin-bottom: 6px; font-size: 13px; text-align: center; }
+  
+  /* 門與怪物視窗 */
+  .door-frame { width: 100%; height: 125px; background: #0b0c10; border: 3px solid #5c6484; border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .monster-sprite { font-size: 42px; transition: transform 0.3s, opacity 0.3s; opacity: 0.12; filter: grayscale(80%); }
+  .monster-approaching { opacity: 0.65; transform: scale(1.1); filter: grayscale(20%); }
+  .monster-at-door { opacity: 1; transform: scale(1.3); filter: drop-shadow(0 0 10px #ef476f); animation: shake 0.4s infinite; }
+  
+  @keyframes shake { 0%,100%{transform:scale(1.3) translateX(0);} 25%{transform:scale(1.3) translateX(-3px);} 75%{transform:scale(1.3) translateX(3px);} }
+
+  /* 鐵捲門遮罩 */
+  .shutter { position: absolute; top: 0; left: 0; width: 100%; height: 0%; background: repeating-linear-gradient(0deg, #4a5268, #4a5268 12px, #2f3545 12px, #2f3545 20px); border-bottom: 4px solid #ffd166; transition: height 0.2s ease-in-out; z-index: 5; display: flex; align-items: center; justify-content: center; color: #ffd166; font-weight: bold; font-size: 13px; text-align: center; overflow: hidden; padding: 4px; }
+  .shutter.closed { height: 100%; }
+
+  /* 拉桿按鈕 */
+  .lever-btn { margin-top: 8px; width: 100%; padding: 10px 4px; border-radius: 8px; border: 2px solid #6c757d; background: #343a40; color: #fff; font-size: 13px; font-weight: bold; cursor: pointer; text-align: center; }
+  .lever-btn.active { background: #ef476f; border-color: #ff8fa3; box-shadow: 0 0 10px rgba(239,71,111,0.5); }
+
+  /* 下方控制台：手機上自動改為上下排列，電腦上左右排列 */
+  .bottom-console { grid-column: 1 / 4; display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 4px; }
+  @media (min-width: 650px) {
+    .bottom-console { grid-template-columns: 1fr 1.4fr; }
+    .door-frame { height: 160px; }
+    .monster-sprite { font-size: 54px; }
+  }
+  
+  .generator-box, .tv-box { background: #181a24; border: 2px solid #3d435c; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; }
+  
+  .gen-btn { padding: 14px; font-size: 16px; font-weight: bold; border-radius: 10px; border: 2px solid #ffd166; background: #2b2d42; color: #ffd166; cursor: pointer; width: 100%; }
+  .gen-btn:active, .gen-btn.charging { background: #ffd166; color: #12131a; }
+
+  /* 電視監視器與沙沙特效 */
+  .tv-screen { background: #050608; border: 3px solid #6c757d; border-radius: 8px; min-height: 85px; display: flex; align-items: center; justify-content: space-around; padding: 6px; position: relative; overflow: hidden; gap: 4px; }
+  .tv-static { position: absolute; inset: 0; background: repeating-radial-gradient(#fff 0 0.0001%,#000 0 0.0002%) 50% 0/2500px 2500px; opacity: 0.16; pointer-events: none; }
+  
+  .cam-feed { z-index: 2; text-align: center; padding: 6px 4px; border-radius: 6px; background: rgba(255,255,255,0.06); width: 32%; font-size: 13px; }
+  .cam-alert { background: rgba(239, 71, 111, 0.4); border: 1px solid #ef476f; color: #ffccd5; font-weight: bold; animation: blink 0.5s infinite; }
+  @keyframes blink { 50% { opacity: 0.4; } }
+
+  /* 彈出視窗 */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 50; padding: 15px; }
+  .modal.show { display: flex; }
+  .modal-card { background: #222638; border: 3px solid #ffd166; border-radius: 16px; padding: 20px; max-width: 420px; width: 100%; text-align: center; }
+  .shop-btn { display: block; width: 100%; margin: 10px 0; padding: 12px; background: #2e344e; border: 2px solid #5c6794; color: #fff; border-radius: 10px; font-size: 15px; font-weight: bold; }
+  .start-btn { margin-top: 12px; padding: 12px 24px; background: #06d6a0; color: #000; font-weight: bold; font-size: 17px; border: none; border-radius: 10px; width: 100%; }
+</style>
+</head>
+<body>
+
+<h1>🛡️ 定緁的基地守夜：十日生存</h1>
+
+<div class="hud">
+  <div class="hud-box">📅 第 <span id="dayNum" style="color:#ffd166;font-size:20px;">1</span>/10 天 | 💰<span id="coins" style="color:#ffd166;">0</span></div>
+  <div class="clock-box" id="clockDisplay">🌙 09:00 PM</div>
+  <div class="hud-box" style="grid-column: 1 / 3;">
+    ⚡ 電力 <span id="powerText" style="width:45px;">100%</span>
+    <div class="power-bar-bg"><div id="powerBar" class="power-bar-fill"></div></div>
+  </div>
+</div>
+
+<div class="base-grid">
+  <div class="lane">
+    <div class="lane-title">【左門】機器人</div>
+    <div class="door-frame">
+      <div id="monster-0" class="monster-sprite">🤖</div>
+      <div id="shutter-0" class="shutter">🔒 玻璃門已關</div>
+    </div>
+    <button id="lever-0" class="lever-btn" onclick="toggleDoor(0)">🕹️ 開門中</button>
+  </div>
+
+  <div class="lane">
+    <div class="lane-title">【中路】通風管</div>
+    <div class="door-frame">
+      <div id="monster-1" class="monster-sprite">👾</div>
+      <div id="shutter-1" class="shutter">🔒 鐵柵欄已關</div>
+    </div>
+    <button id="lever-1" class="lever-btn" onclick="toggleDoor(1)">🕹️ 開門中</button>
+  </div>
+
+  <div class="lane">
+    <div class="lane-title">【右門】鐵捲門</div>
+    <div class="door-frame">
+      <div id="monster-2" class="monster-sprite">🐙</div>
+      <div id="shutter-2" class="shutter">🔒 鐵捲門已關</div>
+    </div>
+    <button id="lever-2" class="lever-btn" onclick="toggleDoor(2)">🕹️ 開門中</button>
+  </div>
+
+  <div class="bottom-console">
+    <div class="tv-box">
+      <div style="font-weight:bold; color:#06d6a0; font-size:14px; margin-bottom:6px;">
+        📺 小電視監視器 (沙沙=安全 / 清楚=有怪)
+      </div>
+      <div class="tv-screen">
+        <div class="tv-static"></div>
+        <div id="cam-0" class="cam-feed">左門<br><span>🌫️沙沙</span></div>
+        <div id="cam-1" class="cam-feed">通風管<br><span>🌫️沙沙</span></div>
+        <div id="cam-2" class="cam-feed">右門<br><span>🌫️沙沙</span></div>
+      </div>
+    </div>
+
+    <div class="generator-box">
+      <div style="font-size:12px; color:#ccc; margin-bottom:6px;">
+        🔌 門全開會慢速回電；沒電時快按下方插頭充電！
+      </div>
+      <button id="genBtn" class="gen-btn" onclick="chargeGenerator()">⚡ 點擊插上插頭發電 (+8%)</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal" class="modal">
+  <div class="modal-card">
+    <h2 id="modalTitle" style="color:#ffd166; margin-top:0; font-size:20px;">☀️ 太陽出來了！</h2>
+    <p id="modalDesc" style="font-size:15px;"></p>
+    <div id="shopArea">
+      <button class="shop-btn" onclick="buyUpgrade('battery')">🔋 升級大電池 (耗電變慢) - 50金幣</button>
+      <button class="shop-btn" onclick="buyUpgrade('crank')">🔌 升級粗電線 (發電變多) - 50金幣</button>
+    </div>
+    <button class="start-btn" id="nextBtn" onclick="nextNight()">🌙 進入下一晚</button>
+  </div>
+</div>
+
+<script>
+  let day = 1, coins = 0, power = 100, timeMinutes = 0;
+  let doors = [false, false, false], monsters = [0, 0, 0], monsterTimers = [0, 0, 0];
+  let gameLoop = null, drainMultiplier = 1, chargePower = 8, isGameOver = false;
+
+  function toggleDoor(idx) {
+    if (power <= 0 && !doors[idx]) return;
+    doors[idx] = !doors[idx];
+    updateDoorUI(idx);
+  }
+
+  function updateDoorUI(idx) {
+    const shutter = document.getElementById(`shutter-${idx}`);
+    const lever = document.getElementById(`lever-${idx}`);
+    if (doors[idx]) {
+      shutter.classList.add('closed');
+      lever.classList.add('active');
+      lever.innerText = '🕹️ 已關門(耗電)';
+    } else {
+      shutter.classList.remove('closed');
+      lever.classList.remove('active');
+      lever.innerText = '🕹️ 開門中';
+    }
+  }
+
+  function chargeGenerator() {
+    if (isGameOver) return;
+    power = Math.min(100, power + chargePower);
+    updateHUD();
+  }
+
+  function updateHUD() {
+    document.getElementById('dayNum').innerText = day;
+    document.getElementById('coins').innerText = coins;
+    document.getElementById('powerText').innerText = Math.floor(power) + '%';
+    document.getElementById('powerBar').style.width = power + '%';
+
+    let totalHours = 21 + Math.floor(timeMinutes / 60);
+    let displayHour = totalHours % 24;
+    let ampm = displayHour >= 12 ? 'PM' : 'AM';
+    let h12 = displayHour % 12 || 12;
+    let m = Math.floor(timeMinutes % 60);
+    document.getElementById('clockDisplay').innerText = 
+      `🌙 ${String(h12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+
+  function updateMonsters() {
+    const names = ['機器人', '管道怪', '四手怪'];
+    const laneLabels = ['左門', '通風管', '右門'];
+    for (let i = 0; i < 3; i++) {
+      if (monsters[i] === 0) {
+        if (Math.random() < (0.04 + day * 0.008)) {
+          monsters[i] = 1; monsterTimers[i] = 0;
+        }
+      } else if (monsters[i] === 1) {
+        monsterTimers[i]++;
+        if (monsterTimers[i] > Math.max(4, 9 - Math.floor(day/2))) {
+          monsters[i] = 2; monsterTimers[i] = 0;
+        }
+      } else if (monsters[i] === 2) {
+        monsterTimers[i]++;
+        if (doors[i]) {
+          if (monsterTimers[i] >= 3) {
+            monsters[i] = 0; monsterTimers[i] = 0; coins += 10;
+          }
+        } else if (monsterTimers[i] >= 5) {
+          triggerGameOver(names[i]); return;
+        }
+      }
+
+      const sprite = document.getElementById(`monster-${i}`);
+      const cam = document.getElementById(`cam-${i}`);
+      sprite.className = 'monster-sprite';
+      cam.className = 'cam-feed';
+
+      if (monsters[i] === 0) {
+        cam.innerHTML = `${laneLabels[i]}<br><span>🌫️沙沙</span>`;
+      } else if (monsters[i] === 1) {
+        sprite.classList.add('monster-approaching');
+        cam.innerHTML = `${laneLabels[i]}<br><span style="color:#ffd166;">👀靠近中</span>`;
+      } else if (monsters[i] === 2) {
+        sprite.classList.add('monster-at-door');
+        cam.classList.add('cam-alert');
+        cam.innerHTML = `${laneLabels[i]}<br><span>🚨快關門!</span>`;
+      }
+    }
+  }
+
+  function tick() {
+    if (isGameOver) return;
+    timeMinutes += 12;
+    if (timeMinutes >= 540) { winNight(); return; }
+
+    let closedCount = doors.filter(d => d).length;
+    if (closedCount === 0) power = Math.min(100, power + 0.6);
+    else power = Math.max(0, power - (closedCount * 1.6 * drainMultiplier));
+
+    if (power <= 0) {
+      for (let i = 0; i < 3; i++) { doors[i] = false; updateDoorUI(i); }
+    }
+    updateMonsters();
+    updateHUD();
+  }
+
+  function winNight() {
+    clearInterval(gameLoop);
+    coins += 50; updateHUD();
+    const modal = document.getElementById('modal');
+    modal.classList.add('show');
+    if (day >= 10) {
+      document.getElementById('modalTitle').innerText = '🏆 恭喜定緁！成功撐過 10 天破關！';
+      document.getElementById('modalDesc').innerText = '所有怪物都被你擋在基地門外了！';
+      document.getElementById('shopArea').style.display = 'none';
+      document.getElementById('nextBtn').innerText = '🔄 重新挑戰第 1 天';
+      day = 0;
+    } else {
+      document.getElementById('modalTitle').innerText = `☀️ 6:00 AM 太陽出來了！(第 ${day} 天完成)`;
+      document.getElementById('modalDesc').innerText = `過關 +50 金幣！目前有 ${coins} 金幣，白天去商店強化基地吧：`;
+      document.getElementById('shopArea').style.display = 'block';
+      document.getElementById('nextBtn').innerText = `🌙 進入第 ${day + 1} 晚`;
+    }
+  }
+
+  function triggerGameOver(monsterName) {
+    isGameOver = true; clearInterval(gameLoop);
+    const modal = document.getElementById('modal');
+    document.getElementById('modalTitle').innerText = `💥 糟糕！【${monsterName}】衝進來了！`;
+    document.getElementById('modalDesc').innerText = `看到小電視出現「🚨快關門!」時，要趕快拉下對應的門喔！`;
+    document.getElementById('shopArea').style.display = 'none';
+    document.getElementById('nextBtn').innerText = `🔄 重新挑戰第 ${day} 晚`;
+    modal.classList.add('show');
+  }
+
+  function buyUpgrade(type) {
+    if (coins < 50) { alert('金幣不夠喔！'); return; }
+    coins -= 50;
+    if (type === 'battery') { drainMultiplier *= 0.8; alert('🔋 升級成功！關門更省電了！'); }
+    else { chargePower += 4; alert('🔌 升級成功！點擊發電充更快了！'); }
+    updateHUD();
+  }
+
+  function nextNight() {
+    if (!isGameOver) day++;
+    isGameOver = false; power = 100; timeMinutes = 0;
+    doors = [false, false, false]; monsters = [0, 0, 0]; monsterTimers = [0, 0, 0];
+    for (let i = 0; i < 3; i++) updateDoorUI(i);
+    document.getElementById('modal').classList.remove('show');
+    updateHUD();
+    gameLoop = setInterval(tick, 1000);
+  }
+
+  gameLoop = setInterval(tick, 1000);
+</script>
+</body>
+</html>

@@ -3,46 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>定緁的勇者迷宮速通冒險：決戰巨龍 (iPad 觸控版)</title>
+    <title>定緁的勇者迷宮速通冒險：決戰巨龍</title>
     <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
         body {
             margin: 0;
-            padding: 5px;
+            padding: 6px;
             background-color: #1a1a2e;
             color: #e94560;
             font-family: "Microsoft JhengHei", Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
+            justify-content: space-between;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh; /* 動態扣除手機與 iPad 瀏覽器工具列高度 */
             overflow: hidden;
-            touch-action: none; /* 防止平板放大縮小和滑動干擾 */
+            touch-action: none;
+        }
+
+        /* 頂部資訊列：自動緊湊排列 */
+        .header-area {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            flex-shrink: 0;
         }
 
         h1 {
-            margin: 2px 0;
-            font-size: 20px;
+            margin: 0;
+            font-size: clamp(15px, 2.5vw, 22px);
             color: #0ff;
             text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
-            text-align: center;
+            white-space: nowrap;
         }
 
         .top-bar {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
-            margin-bottom: 4px;
         }
 
         .info-panel {
-            font-size: 14px;
+            font-size: clamp(12px, 1.8vw, 15px);
             color: #fff;
             font-weight: bold;
             background: #16213e;
-            padding: 3px 8px;
+            padding: 4px 8px;
             border-radius: 6px;
-            border: 2px solid #0f3460;
+            border: 1px solid #0f3460;
+            white-space: nowrap;
         }
 
         #music-btn {
@@ -53,151 +74,163 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 13px;
-            box-shadow: 0 3px 0 #a8203b;
+            font-size: clamp(12px, 1.8vw, 14px);
+            box-shadow: 0 2px 0 #a8203b;
+            white-space: nowrap;
         }
 
-        /* 遊戲主容器與畫布適配 iPad 橫向顯示 */
-        #game-container {
+        /* 遊戲畫布外框：自動計算剩餘空間，保持 16:9 比例不變形 */
+        #game-wrapper {
+            flex: 1;
+            width: 100%;
+            max-width: 960px;
+            min-height: 0; /* 關鍵：允許 Flex 子元素縮小以適應螢幕 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
-            width: 850px;
-            height: 440px;
-            background-color: #16213e;
-            border: 4px solid #0f3460;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.8);
+            margin: 4px 0;
         }
 
         canvas {
-            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            aspect-ratio: 16 / 9;
             background: #0f3460;
+            border: 3px solid #e94560;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+            display: block;
         }
 
-        /* 螢幕下方的虛擬觸控方向鍵（專為平板設計） */
+        /* 底部觸控方向鍵區：手機與 iPad 皆好按 */
         .touch-controls {
+            width: 100%;
+            max-width: 900px;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            width: 850px;
-            margin-top: 6px;
-            padding: 0 10px;
-            box-sizing: border-box;
+            padding: 2px 10px;
+            flex-shrink: 0;
         }
 
         .dpad-group {
             display: grid;
-            grid-template-columns: repeat(3, 50px);
-            grid-template-rows: repeat(2, 45px);
-            gap: 4px;
+            grid-template-columns: repeat(3, clamp(44px, 11vw, 60px));
+            grid-template-rows: repeat(2, clamp(38px, 8vh, 50px));
+            gap: 6px;
         }
 
         .dpad-btn {
-            background-color: #0f3460;
+            background-color: #16213e;
             color: #0ff;
             border: 2px solid #e94560;
-            border-radius: 8px;
-            font-size: 20px;
+            border-radius: 10px;
+            font-size: clamp(18px, 4vw, 24px);
             font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            user-select: none;
-            box-shadow: 0 3px 0 #1a1a2e;
+            box-shadow: 0 3px 0 #0f3460;
+            touch-action: none;
         }
 
-        .dpad-btn:active {
+        .dpad-btn:active, .dpad-btn.active {
             background-color: #e94560;
             color: white;
             transform: translateY(2px);
-            box-shadow: 0 0 0 #1a1a2e;
+            box-shadow: none;
         }
 
-        /* 各自釘選方向鍵位置 */
         #btn-up { grid-column: 2; grid-row: 1; }
         #btn-left { grid-column: 1; grid-row: 2; }
         #btn-down { grid-column: 2; grid-row: 2; }
         #btn-right { grid-column: 3; grid-row: 2; }
 
         .tip-text {
-            font-size: 13px;
-            color: #a0a0a0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
+            font-size: clamp(12px, 2vw, 15px);
+            color: #ccc;
+            text-align: right;
+            line-height: 1.4;
         }
 
-        /* 解密彈窗 */
+        /* 解密彈窗：鎖定在畫面正中央，絕不超出螢幕 */
         #modal {
             display: none;
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 500px;
+            width: 92%;
+            max-width: 460px;
+            max-height: 92dvh;
             background: rgba(22, 33, 62, 0.98);
-            border: 4px solid #e94560;
-            border-radius: 16px;
-            padding: 15px;
-            box-shadow: 0 20px 45px rgba(0,0,0,0.9);
+            border: 3px solid #0ff;
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.95);
             text-align: center;
-            z-index: 10;
-            box-sizing: border-box;
+            z-index: 100;
+            overflow-y: auto;
         }
 
         #modal h2 {
-            margin: 0 0 5px 0;
+            margin: 0 0 6px 0;
             color: #ff2e63;
-            font-size: 20px;
+            font-size: clamp(18px, 4vw, 22px);
         }
 
         #target-info {
-            font-size: 16px;
+            font-size: clamp(15px, 3.5vw, 18px);
             color: #fff;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             background: rgba(255, 255, 255, 0.08);
-            padding: 5px;
+            padding: 6px;
             border-radius: 6px;
         }
 
         #input-display {
-            font-size: 28px;
-            letter-spacing: 5px;
+            font-size: clamp(24px, 5vw, 32px);
+            letter-spacing: 4px;
             color: #0ff;
             background: #0f3460;
             padding: 6px;
             border-radius: 6px;
-            margin-bottom: 8px;
-            min-height: 35px;
+            margin-bottom: 10px;
+            min-height: 42px;
             border: 2px dashed #0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .keyboard {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 6px;
-            margin-bottom: 8px;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
         .key-btn {
             background-color: #e94560;
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 18px;
+            border-radius: 8px;
+            font-size: clamp(18px, 4vw, 22px);
             font-weight: bold;
-            width: 44px;
-            height: 44px;
+            width: clamp(44px, 11vw, 52px);
+            height: clamp(44px, 11vw, 52px);
             cursor: pointer;
             box-shadow: 0 3px 0 #a8203b;
         }
 
         .key-btn:active {
             transform: translateY(3px);
-            box-shadow: 0 0 0 #a8203b;
+            box-shadow: none;
         }
 
         .key-btn.tone {
@@ -208,16 +241,16 @@
         .action-row {
             display: flex;
             justify-content: space-between;
-            gap: 8px;
+            gap: 10px;
         }
 
         .action-btn {
             flex: 1;
-            padding: 8px;
-            font-size: 15px;
+            padding: 10px;
+            font-size: clamp(14px, 3.5vw, 17px);
             font-weight: bold;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
         }
 
@@ -225,63 +258,69 @@
         #submit-btn { background-color: #2ecc71; color: white; }
 
         #message {
-            margin-top: 4px;
+            margin-top: 6px;
             font-size: 15px;
             font-weight: bold;
+            min-height: 20px;
         }
     </style>
 </head>
 <body>
 
-    <h1>✨ 定緁的勇者迷宮速通冒險：決戰巨龍 ✨</h1>
-    
-    <div class="top-bar">
-        <div class="info-panel">關卡：第 <span id="current-stage">1</span> / 7 關</div>
-        <div class="info-panel">⏱️ 時間：<span id="timer">0</span> 秒</div>
-        <button id="music-btn" onclick="toggleBGM()">🎵 播放 BGM</button>
-    </div>
-
-    <div id="game-container">
-        <canvas id="gameCanvas" width="850" height="440"></canvas>
-        
-        <div id="modal">
-            <h2 id="modal-title">🔓 勇者解鎖寶箱</h2>
-            <div id="target-info">載入中...</div>
-            <div id="input-display"></div>
-            
-            <div class="keyboard" id="keyboard"></div>
-
-            <div class="action-row">
-                <button class="action-btn" id="clear-btn" onclick="clearInput()">清除重填</button>
-                <button class="action-btn" id="submit-btn" onclick="checkAnswer()">確認咒語 🔑</button>
-            </div>
-            <div id="message"></div>
+    <div class="header-area">
+        <h1>✨ 定緁的勇者迷宮：決戰巨龍 ✨</h1>
+        <div class="top-bar">
+            <div class="info-panel">關卡：<span id="current-stage">1</span> / 7</div>
+            <div class="info-panel">⏱️ <span id="timer">0</span> 秒</div>
+            <button id="music-btn" onclick="toggleBGM()">🎵 BGM</button>
         </div>
     </div>
 
-    <!-- iPad 專用虛擬方向鍵觸控區 -->
+    <div id="game-wrapper">
+        <!-- 內部邏輯維持 800x450 (16格 x 9格，每格 50px) -->
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+    </div>
+
+    <!-- 解密彈窗 -->
+    <div id="modal">
+        <h2 id="modal-title">🔓 勇者解鎖寶箱</h2>
+        <div id="target-info">載入中...</div>
+        <div id="input-display"></div>
+        <div class="keyboard" id="keyboard"></div>
+        <div class="action-row">
+            <button class="action-btn" id="clear-btn" onclick="clearInput()">清除重填</button>
+            <button class="action-btn" id="submit-btn" onclick="checkAnswer()">確認咒語 🔑</button>
+        </div>
+        <div id="message"></div>
+    </div>
+
+    <!-- 底部虛擬控制器 -->
     <div class="touch-controls">
         <div class="dpad-group">
-            <button class="dpad-btn" id="btn-up" ontstart="setMove('up', true)" ontouchend="setMove('up', false)" onmousedown="setMove('up', true)" onmouseup="setMove('up', false)">⬆️</button>
-            <button class="dpad-btn" id="btn-left" ontstart="setMove('left', true)" ontouchend="setMove('left', false)" onmousedown="setMove('left', true)" onmouseup="setMove('left', false)">⬅️</button>
-            <button class="dpad-btn" id="btn-down" ontstart="setMove('down', true)" ontouchend="setMove('down', false)" onmousedown="setMove('down', true)" onmouseup="setMove('down', false)">⬇️</button>
-            <button class="dpad-btn" id="btn-right" ontstart="setMove('right', true)" ontouchend="setMove('right', false)" onmousedown="setMove('right', true)" onmouseup="setMove('right', false)">➡️</button>
+            <button class="dpad-btn" id="btn-up" data-dir="up">⬆️</button>
+            <button class="dpad-btn" id="btn-left" data-dir="left">⬅️</button>
+            <button class="dpad-btn" id="btn-down" data-dir="down">⬇️</button>
+            <button class="dpad-btn" id="btn-right" data-dir="right">➡️</button>
         </div>
-        <div class="tip-text">👆 點擊左側方向鍵移動勇者！</div>
+        <div class="tip-text">
+            👈 按住方向鍵移動勇者<br>
+            <span style="color:#0ff; font-size: 0.9em;">(可收集注音，或直接衝寶箱速通！)</span>
+        </div>
     </div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
+        const tileSize = 50; // 800x450 對應 16x9 格
 
         const stages = [
             {
                 type: "chest", word: "寶箱", english: "Treasure Chest", icon: "🎁", pinyin: "ㄅㄠˇㄒㄧㄤ", color: "#f1c40f",
                 poolKeys: ["ㄅ", "ㄠ", "ˇ", "ㄒ", "ㄧ", "ㄤ", "ㄉ", "ㄇ", "ㄆ"],
-                startX: 1, startY: 1, targetX: 15, targetY: 7,
+                startX: 1, startY: 1, targetX: 14, targetY: 7,
                 walls: [
                     {x:3, y:0, w:1, h:6}, {x:6, y:2, w:1, h:6}, {x:9, y:1, w:1, h:5},
-                    {x:12, y:2, w:1, h:6}, {x:4, y:7, w:5, h:1}, {x:12, y:2, w:3, h:1}
+                    {x:12, y:2, w:1, h:6}, {x:4, y:7, w:4, h:1}
                 ],
                 items: [
                     {symbol: "ㄅ", x: 4, y: 2}, {symbol: "ㄠ", x: 2, y: 5},
@@ -292,27 +331,27 @@
             {
                 type: "chest", word: "怪物", english: "Monster", icon: "👾", pinyin: "ㄍㄨㄞˋㄨˋ", color: "#e74c3c",
                 poolKeys: ["ㄍ", "ㄨ", "ㄞ", "ˋ", "ㄨ", "ㄅ", "ㄉ", "ㄎ", "ㄏ"],
-                startX: 1, startY: 7, targetX: 15, targetY: 1,
+                startX: 1, startY: 7, targetX: 14, targetY: 1,
                 walls: [
-                    {x:2, y:2, w:6, h:1}, {x:5, y:3, w:1, h:4}, {x:9, y:1, w:1, h:6},
-                    {x:12, y:2, w:3, h:1}, {x:7, y:6, w:5, h:1}, {x:11, y:4, w:1, h:3}
+                    {x:2, y:2, w:5, h:1}, {x:5, y:3, w:1, h:4}, {x:8, y:1, w:1, h:6},
+                    {x:11, y:2, w:3, h:1}, {x:7, y:6, w:4, h:1}, {x:11, y:4, w:1, h:3}
                 ],
                 items: [
                     {symbol: "ㄍ", x: 3, y: 1}, {symbol: "ㄨ", x: 3, y: 5},
-                    {symbol: "ㄞ", x: 7, y: 2}, {symbol: "ˇ", x: 7, y: 5},
-                    {symbol: "ㄨ", x: 10, y: 2}, {symbol: "ˋ", x: 14, y: 5}
+                    {symbol: "ㄞ", x: 7, y: 2}, {symbol: "ˋ", x: 7, y: 5}, // 已修正為四聲 ˋ
+                    {symbol: "ㄨ", x: 10, y: 2}, {symbol: "ˋ", x: 13, y: 5}
                 ]
             },
             {
                 type: "chest", word: "武器", english: "Weapon", icon: "🗡️", pinyin: "ㄨˇㄑㄧˋ", color: "#3498db",
                 poolKeys: ["ㄨ", "ˇ", "ㄑ", "ㄧ", "ˋ", "ㄅ", "ㄉ", "ㄐ", "ㄒ"],
-                startX: 15, startY: 1, targetX: 1, targetY: 7,
+                startX: 14, startY: 1, targetX: 1, targetY: 7,
                 walls: [
                     {x:4, y:1, w:1, h:5}, {x:7, y:2, w:4, h:1}, {x:10, y:3, w:1, h:4},
-                    {x:3, y:6, w:4, h:1}, {x:12, y:2, w:1, h:5}, {x:14, y:6, w:2, h:1}
+                    {x:3, y:6, w:4, h:1}, {x:12, y:2, w:1, h:5}
                 ],
                 items: [
-                    {symbol: "ㄨ", x: 12, y: 1}, {symbol: "ˇ", x: 8, y: 1},
+                    {symbol: "ㄨ", x: 11, y: 1}, {symbol: "ˇ", x: 8, y: 1},
                     {symbol: "ㄑ", x: 5, y: 4}, {symbol: "ㄧ", x: 2, y: 3},
                     {symbol: "ˋ", x: 8, y: 7}
                 ]
@@ -320,15 +359,15 @@
             {
                 type: "chest", word: "魔法", english: "Magic", icon: "🔮", pinyin: "ㄇㄛˊㄈㄚˇ", color: "#9b59b6",
                 poolKeys: ["ㄇ", "ㄛ", "ˊ", "ㄈ", "ㄚ", "ˇ", "ㄉ", "ㄋ", "ㄌ"],
-                startX: 1, startY: 4, targetX: 15, targetY: 4,
+                startX: 1, startY: 4, targetX: 14, targetY: 4,
                 walls: [
-                    {x:4, y:1, w:1, h:6}, {x:6, y:1, w:1, h:5}, {x:9, y:2, w:1, h:5},
-                    {x:11, y:1, w:1, h:6}, {x:13, y:1, w:1, h:5}, {x:6, y:2, w:3, h:1}
+                    {x:3, y:1, w:1, h:6}, {x:6, y:1, w:1, h:5}, {x:9, y:2, w:1, h:5},
+                    {x:12, y:1, w:1, h:6}, {x:6, y:2, w:3, h:1}
                 ],
                 items: [
                     {symbol: "ㄇ", x: 2, y: 2}, {symbol: "ㄛ", x: 4, y: 4},
                     {symbol: "ˊ", x: 7, y: 6}, {symbol: "ㄈ", x: 10, y: 1},
-                    {symbol: "ㄚ", x: 12, y: 4}, {symbol: "ˇ", x: 14, y: 2}
+                    {symbol: "ㄚ", x: 11, y: 4}, {symbol: "ˇ", x: 13, y: 2}
                 ]
             },
             {
@@ -336,32 +375,32 @@
                 poolKeys: ["ㄧ", "ㄠ", "ˋ", "ㄕ", "˙", "ㄅ", "ㄉ", "ㄓ", "ㄔ"],
                 startX: 8, startY: 7, targetX: 8, targetY: 1,
                 walls: [
-                    {x:2, y:2, w:12, h:1}, {x:2, y:6, w:12, h:1}, {x:4, y:3, w:1, h:3}, {x:11, y:3, w:1, h:3}
+                    {x:2, y:2, w:11, h:1}, {x:2, y:6, w:11, h:1}, {x:4, y:3, w:1, h:3}, {x:11, y:3, w:1, h:3}
                 ],
                 items: [
                     {symbol: "ㄧ", x: 5, y: 1}, {symbol: "ㄠ", x: 1, y: 4},
-                    {symbol: "ˋ", x: 14, y: 4}, {symbol: "ㄕ", x: 6, y: 7},
+                    {symbol: "ˋ", x: 13, y: 4}, {symbol: "ㄕ", x: 6, y: 7},
                     {symbol: "˙", x: 9, y: 7}
                 ]
             },
             {
                 type: "chest", word: "勝利", english: "Victory", icon: "🏆", pinyin: "ㄕㄥˋㄌㄧˋ", color: "#e67e22",
                 poolKeys: ["ㄕ", "ㄥ", "ˋ", "ㄌ", "ㄧ", "ㄅ", "ㄉ", "ㄖ", "ㄗ"],
-                startX: 1, startY: 1, targetX: 15, targetY: 7,
+                startX: 1, startY: 1, targetX: 14, targetY: 7,
                 walls: [
-                    {x:2, y:2, w:3, h:2}, {x:6, y:1, w:1, h:6}, {x:9, y:2, w:5, h:1},
-                    {x:4, y:5, w:7, h:1}, {x:11, y:3, w:1, h:3}
+                    {x:2, y:2, w:3, h:2}, {x:6, y:1, w:1, h:6}, {x:9, y:2, w:4, h:1},
+                    {x:4, y:5, w:6, h:1}, {x:11, y:3, w:1, h:3}
                 ],
                 items: [
                     {symbol: "ㄕ", x: 4, y: 3}, {symbol: "ㄥ", x: 1, y: 6},
                     {symbol: "ˋ", x: 7, y: 3}, {symbol: "ㄌ", x: 12, y: 1},
-                    {symbol: "ㄧ", x: 9, y: 7}, {symbol: "ˋ", x: 14, y: 6}
+                    {symbol: "ㄧ", x: 9, y: 7}, {symbol: "ˋ", x: 13, y: 6}
                 ]
             },
             {
                 type: "boss",  word: "巨龍", english: "Dragon Boss", icon: "🐉", pinyin: "ㄐㄩˋㄌㄨㄥˊ", color: "#ff0055",
                 poolKeys: ["ㄐ", "ㄩ", "ˋ", "ㄌ", "ㄨ", "ㄥ", "ˊ", "ㄅ", "ㄉ"],
-                startX: 1, startY: 4, targetX: 15, targetY: 4,
+                startX: 1, startY: 4, targetX: 14, targetY: 4,
                 walls: [
                     {x:4, y:1, w:1, h:3}, {x:4, y:5, w:1, h:3},
                     {x:8, y:2, w:1, h:5},
@@ -371,14 +410,13 @@
                     {symbol: "ㄐ", x: 2, y: 2}, {symbol: "ㄩ", x: 2, y: 6},
                     {symbol: "ˋ", x: 6, y: 3}, {symbol: "ㄌ", x: 6, y: 6},
                     {symbol: "ㄨ", x: 9, y: 1}, {symbol: "ㄥ", x: 9, y: 7},
-                    {symbol: "ˊ", x: 14, y: 2}
+                    {symbol: "ˊ", x: 13, y: 2}
                 ]
             }
         ];
 
         let currentStageIndex = 0;
         let activeTarget = null;
-        const tileSize = 50;
 
         let player = {
             x: 50,
@@ -398,14 +436,29 @@
             document.getElementById("timer").innerText = totalSeconds;
         }, 1000);
 
-        function setMove(direction, isPressed) {
-            touchMoves[direction] = isPressed;
-        }
+        // 綁定支援手機與 iPad 的 Pointer Events
+        document.querySelectorAll('.dpad-btn').forEach(btn => {
+            const dir = btn.getAttribute('data-dir');
+            const startMove = (e) => {
+                e.preventDefault();
+                touchMoves[dir] = true;
+                btn.classList.add('active');
+            };
+            const endMove = (e) => {
+                e.preventDefault();
+                touchMoves[dir] = false;
+                btn.classList.remove('active');
+            };
+            btn.addEventListener('pointerdown', startMove);
+            btn.addEventListener('pointerup', endMove);
+            btn.addEventListener('pointerleave', endMove);
+            btn.addEventListener('pointercancel', endMove);
+        });
 
         function resetStage() {
             let stage = stages[currentStageIndex];
-            player.x = stage.startX * tileSize + 8;
-            player.y = stage.startY * tileSize + 8;
+            player.x = stage.startX * tileSize + 10;
+            player.y = stage.startY * tileSize + 10;
             stage.items.forEach(item => item.collected = false);
         }
 
@@ -524,18 +577,23 @@
             bgmPlaying = !bgmPlaying;
             const btn = document.getElementById("music-btn");
             if (bgmPlaying) {
-                btn.innerText = "🔇 關閉 BGM";
+                btn.innerText = "🔇 靜音";
                 btn.style.backgroundColor = "#2ecc71";
                 if (bgmTimer) clearInterval(bgmTimer);
                 bgmTimer = setInterval(playBGMStep, 250);
             } else {
-                btn.innerText = "🎵 播放 BGM";
+                btn.innerText = "🎵 BGM";
                 btn.style.backgroundColor = "#e94560";
                 if (bgmTimer) clearInterval(bgmTimer);
             }
         }
 
-        window.addEventListener("keydown", (e) => { keys[e.key] = true; });
+        window.addEventListener("keydown", (e) => {
+            keys[e.key] = true;
+            if (e.key === "Enter" && activeTarget && document.getElementById("modal").style.display === "block") {
+                checkAnswer();
+            }
+        });
         window.addEventListener("keyup", (e) => { keys[e.key] = false; });
 
         function checkCollision(nx, ny) {
@@ -590,6 +648,10 @@
             let targetPixelY = stage.targetY * tileSize + 10;
             let distToTarget = Math.hypot(player.x - targetPixelX, player.y - targetPixelY);
             if (distToTarget < 35) {
+                // 停止移動狀態，避免關閉彈窗後暴衝
+                touchMoves = { up: false, down: false, left: false, right: false };
+                keys = {};
+                document.querySelectorAll('.dpad-btn').forEach(b => b.classList.remove('active'));
                 openModal(stage);
             }
         }
@@ -602,12 +664,15 @@
 
             setupKeyboard(obj);
 
+            let collectedList = obj.items.filter(i => i.collected).map(i => i.symbol).join(" ");
+            let bagHint = collectedList ? `<div style="font-size:14px; color:#0ff; margin-top:4px;">🎒 已收集線索：[ ${collectedList} ]</div>` : "";
+
             if (obj.type === "boss") {
-                document.getElementById("modal-title").innerText = "🔥 終極魔王挑戰：巨龍出現！";
-                document.getElementById("target-info").innerHTML = `${obj.icon} <b>${obj.word}</b> <span style="color:#ff0055; font-size:16px;">(${obj.english})</span><br><span style="font-size:14px; color:#f39c12;">輸入正確咒語擊敗巨龍！</span>`;
+                document.getElementById("modal-title").innerText = "🔥 終極魔王：巨龍出現！";
+                document.getElementById("target-info").innerHTML = `${obj.icon} <b>${obj.word}</b> <span style="color:#ff0055;">(${obj.english})</span>${bagHint}`;
             } else {
                 document.getElementById("modal-title").innerText = `🔓 第 ${currentStageIndex + 1} 關：解鎖寶箱`;
-                document.getElementById("target-info").innerHTML = `${obj.icon} <b>${obj.word}</b> <span style="color:#0ff; font-size:16px;">(${obj.english})</span>`;
+                document.getElementById("target-info").innerHTML = `${obj.icon} <b>${obj.word}</b> <span style="color:#0ff;">(${obj.english})</span>${bagHint}`;
             }
 
             document.getElementById("modal").style.display = "block";
@@ -645,12 +710,7 @@
             const msg = document.getElementById("message");
             if (userInput === activeTarget.pinyin) {
                 msg.style.color = "#2ecc71";
-                if (activeTarget.type === "boss") {
-                    msg.innerText = "🏆 太神啦！擊敗巨龍！";
-                } else {
-                    msg.innerText = "🎉 答對了！寶箱解鎖！";
-                }
-                
+                msg.innerText = activeTarget.type === "boss" ? "🏆 太神啦！擊敗巨龍！" : "🎉 答對了！寶箱解鎖！";
                 playSuccessSound();
 
                 setTimeout(() => {
@@ -659,29 +719,19 @@
                     currentStageIndex++;
                     
                     if (currentStageIndex >= stages.length) {
-                        clearInterval(timerInterval);
                         let rankTitle = totalSeconds < 60 ? "🏆【傳說級閃電速通大師】" : "🌟【冒險勇者】";
                         alert(`🎉 恭喜定緁通關全系列！\n總花費時間：${totalSeconds} 秒\n獲得隱藏頭銜：${rankTitle}`);
                         currentStageIndex = 0;
                         totalSeconds = 0;
                     }
                     document.getElementById("current-stage").innerText = currentStageIndex + 1;
-                    
                     resetStage();
-                }, 1200);
+                }, 1000);
             } else {
                 msg.style.color = "#e74c3c";
                 msg.innerText = "❌ 咒語不對喔，再試試看！";
                 playErrorSound();
             }
-        }
-
-        resetStage();
-
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
         }
 
         function draw() {
@@ -710,46 +760,54 @@
                 ctx.strokeRect(wx, wy, ww, wh);
             }
 
-            let tx = stage.targetX * tileSize + 5;
-            let ty = stage.targetY * tileSize + 5;
+            let tx = stage.targetX * tileSize + 6;
+            let ty = stage.targetY * tileSize + 6;
             ctx.fillStyle = stage.color;
             ctx.fillRect(tx, ty, 38, 38);
 
             ctx.fillStyle = "#fff";
-            ctx.font = "bold 13px sans-serif";
+            ctx.font = "bold 14px sans-serif";
             if (stage.type === "boss") {
-                ctx.fillText(`🔥 最終 BOSS：${stage.word} (可挑戰)`, tx - 55, ty - 8);
+                ctx.fillText(`🔥 ${stage.icon} ${stage.word}`, tx - 20, ty - 8);
             } else {
-                ctx.fillText(`${stage.icon} 第 ${currentStageIndex + 1} 關：${stage.word} (可速通)`, tx - 40, ty - 8);
+                ctx.fillText(`${stage.icon} ${stage.word}`, tx - 10, ty - 8);
             }
 
             stage.items.forEach(item => {
                 if (!item.collected) {
-                    let ix = item.x * tileSize + 10;
-                    let iy = item.y * tileSize + 10;
+                    let ix = item.x * tileSize + 11;
+                    let iy = item.y * tileSize + 11;
                     ctx.fillStyle = "#f39c12";
-                    ctx.fillRect(ix, iy, 26, 26);
+                    ctx.fillRect(ix, iy, 28, 28);
                     ctx.fillStyle = "#000";
-                    ctx.font = "bold 16px sans-serif";
-                    ctx.fillText(item.symbol, ix + 4, iy + 20);
+                    ctx.font = "bold 18px sans-serif";
+                    ctx.fillText(item.symbol, ix + 5, iy + 21);
                 }
             });
 
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, player.width, player.height);
             ctx.fillStyle = "#fff";
-            ctx.font = "12px sans-serif";
-            ctx.fillText("🛡️ 勇者", player.x - 4, player.y - 6);
+            ctx.font = "bold 13px sans-serif";
+            ctx.fillText("🛡️勇者", player.x - 6, player.y - 6);
 
             let collectedList = stage.items.filter(i => i.collected).map(i => i.symbol).join(" ");
             ctx.fillStyle = "rgba(0,0,0,0.75)";
-            ctx.fillRect(10, 10, 260, 32);
+            ctx.fillRect(8, 8, 260, 32);
             ctx.strokeStyle = "#0ff";
             ctx.lineWidth = 1.5;
-            ctx.strokeRect(10, 10, 260, 32);
+            ctx.strokeRect(8, 8, 260, 32);
             ctx.fillStyle = "#0ff";
-            ctx.font = "14px sans-serif";
-            ctx.fillText(`背包注音：[ ${collectedList} ]`, 16, 30);
+            ctx.font = "bold 15px sans-serif";
+            ctx.fillText(`背包注音：[ ${collectedList} ]`, 16, 29);
+        }
+
+        resetStage();
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
         }
 
         gameLoop();
